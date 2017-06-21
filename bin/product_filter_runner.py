@@ -160,10 +160,11 @@ def start_product_filtering(registry, message, **kwargs):
         fname = os.path.basename(tlefile)
 
     tlefile = tle_files[0]
-    if not isinstance(AREA_IDS, list):
-        AREA_IDS = [AREA_IDS]
+    areaids = AREA_IDS
+    if not isinstance(areaids, list):
+        areaids = [areaids]
     inside = False
-    for areaid in AREA_IDS:
+    for areaid in areaids:
         area_def = pr_utils.load_area(AREA_DEF_FILE, areaid)
         inside = granule_inside_area(
             start_time, end_time, platform_name, area_def, tlefile)
