@@ -40,6 +40,12 @@ MODE = os.getenv("SMHI_MODE")
 if MODE is None:
     MODE = "offline"
 
+#: Default time format
+_DEFAULT_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+#: Default log format
+_DEFAULT_LOG_FORMAT = '[%(levelname)s: %(asctime)s : %(name)s] %(message)s'
+
 OPTIONS = {}
 for option, value in CONF.items(MODE, raw=True):
     OPTIONS[option] = value
@@ -50,16 +56,12 @@ try:
 except KeyError:
     SIR_LOCALDIR = None
 
-#: Default time format
-_DEFAULT_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-
-#: Default log format
-_DEFAULT_LOG_FORMAT = '[%(levelname)s: %(asctime)s : %(name)s] %(message)s'
-
 OPTIONS.update({k: OPTIONS[k].split(",")
                 for k in OPTIONS if "," in OPTIONS[k]})
 
 TLEDIR = OPTIONS['tle_dir']
+LOG.info("TLEDIR = {0}".format(TLEDIR))
+
 AREA_IDS = OPTIONS['areas_of_interest']
 AREA_DEF_FILE = os.path.join(CONFIG_PATH, "areas.def")
 
