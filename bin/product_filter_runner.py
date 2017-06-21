@@ -73,6 +73,9 @@ from pyresample.spherical_geometry import point_inside, Coordinate
 from pyresample import utils as pr_utils
 
 METOPS = {'METOPA': 'Metop-A', 'METOPB': 'Metop-B', 'METOPC': 'Metop-C'}
+METOP_LETTER = {'Metop-A': 'a',
+                'Metop-B': 'b',
+                'Metop-C': 'c'}
 
 
 def granule_inside_area(start_time, end_time, platform_name, area_def, tle_file=None):
@@ -104,29 +107,16 @@ def start_product_filtering(registry, message, **kwargs):
     LOG.info(message)
     urlobj = urlparse(message.data['uri'])
 
-    if 'start_time' in message.data and 'start_date' in message.data:
-        dtdate = message.data['start_date']
-        dttime = message.data['start_time']
-        start_time = datetime(dtdate.year,
-                              dtdate.month,
-                              dtdate.day,
-                              dttime.hour,
-                              dttime.minute)
+    if 'start_time' in message.data:
+        start_time = message.data['start_time']
         scene_id = start_time.strftime('%Y%m%d%H%M')
     else:
         LOG.warning("No start time in message!")
         start_time = None
         return registry
 
-    if 'end_time' in message.data and 'end_date' in message.data:
-        dtdate = message.data['end_date']
-        dttime = message.data['end_time']
-        end_time = datetime(dtdate.year,
-                            dtdate.month,
-                            dtdate.day,
-                            dttime.hour,
-                            dttime.minute)
-
+    if 'end_time' in message.data:
+        end_time = message.data['end_time']
     else:
         LOG.warning("No end time in message!")
         end_time = start_time + timedelta(seconds=60 * 3)
@@ -183,6 +173,14 @@ def start_product_filtering(registry, message, **kwargs):
         LOG.info("Granule {0} outside all areas".format(registry[scene_id]))
 
     # Now do the copying of the file to disk changing the filename!
+    # Example: iasi_b__twt_l2p_1706211005.bin
+    mletter = METOP_LETTER.get(platform_name)
+    filename = 'iasi_{0}__twt_l2p_{1}.bin'.format(mletter,
+                                                  start_time.strftime('%y%m%d%H%M'))
+    local_filepath = os.path.join(OPTIONS['sir_local_dir'], filename)
+    shutil.copy(urlobj.path, local_filepath)
+    sir_filepath = os.path.join(OPTIONS['sir_dir'], filename + '_original')
+    shutil.copy(local_filepath, sir_filepath)
 
     return registry
 
