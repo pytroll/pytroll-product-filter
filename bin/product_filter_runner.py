@@ -60,7 +60,7 @@ OPTIONS.update({k: OPTIONS[k].split(",")
                 for k in OPTIONS if "," in OPTIONS[k]})
 
 TLEDIR = OPTIONS['tle_dir']
-LOG.info("TLEDIR = {0}".format(TLEDIR))
+print("TLEDIR = {0}".format(TLEDIR))
 
 AREA_IDS = OPTIONS['areas_of_interest']
 AREA_DEF_FILE = os.path.join(CONFIG_PATH, "areas.def")
@@ -148,10 +148,11 @@ def start_product_filtering(registry, message, **kwargs):
     LOG.info("Sat and Instrument: " + platform_name + " " + instrument)
 
     # Now check if the area is within the area(s) of interest:
-    if not isinstance(TLEDIR, list):
-        TLEDIR = [TLEDIR]
+    tle_dirs = TLEDIR
+    if not isinstance(tle_dirs, list):
+        tle_dirs = [tle_dirs]
     tle_files = []
-    for tledir in TLEDIR:
+    for tledir in tle_dirs:
         tle_files = tle_files + glob(os.path.join(tledir, 'tle-*.txt'))
 
     time_thr = timedelta(days=1)
