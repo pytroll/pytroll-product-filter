@@ -211,9 +211,9 @@ def start_product_filtering(registry, message, **kwargs):
             # ascat_b_ears250_1706211008.bin
             # ascat_a_earscoa_1706211058.bin
             product_name = str(message.data['product'])[0:3]
-            filename = 'ascat_{0}_ears{1}_{2}'.format(mletter,
-                                                      product_name,
-                                                      start_time.strftime('%y%m%d%H%M'))
+            filename = 'ascat_{0}_ears{1}_{2}.bin'.format(mletter,
+                                                          product_name,
+                                                          start_time.strftime('%y%m%d%H%M'))
 
         local_filepath = os.path.join(OPTIONS['sir_local_dir'], filename)
         sir_filepath = os.path.join(OPTIONS['sir_dir'], filename + '_original')
