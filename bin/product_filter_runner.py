@@ -123,11 +123,9 @@ def start_product_filtering(registry, message, **kwargs):
         LOG.warning("No end time in message!")
         end_time = start_time + timedelta(seconds=60 * 3)
 
-    if message.data['instruments'] == 'iasi':
-
+    if message.data['instruments'] in ['iasi', 'ascat']:
         path, fname = os.path.split(urlobj.path)
         LOG.debug("path " + str(path) + " filename = " + str(fname))
-
         instrument = str(message.data['instruments'])
         platform_name = METOPS.get(
             message.data['satellite'], message.data['satellite'])
@@ -155,11 +153,29 @@ def start_product_filtering(registry, message, **kwargs):
     for tledir in tle_dirs:
         tle_files = tle_files + glob(os.path.join(tledir, 'tle-*.txt'))
 
-    time_thr = timedelta(days=1)
+    time_thr = timedelta(days=5)
+    utcnow = datetime.utcnow()
+    valid_tle_file = None
     for tlefile in tle_files:
         fname = os.path.basename(tlefile)
+        try:
+            dtobj = datetime.strptime(
+                fname.split('tle-')[-1].split('.txt')[0], '%Y%m%d')
+        except ValueError:
+            LOG.warning("Failed determine the date-time of the tle-file")
+            valid_tle_file = tlefile
+            break
+        delta_t = abs(utcnow - dtobj)
+        if delta_t < time_thr:
+            time_thr = delta_t
+            valid_tle_file = tlefile
 
-    tlefile = tle_files[0]
+    if not valid_tle_file:
+        LOG.error("Failed finding a valid tle file!")
+        return registry
+    else:
+        LOG.debug("Valid TLE file: {0}".format(valid_tle_file))
+
     areaids = AREA_IDS
     if not isinstance(areaids, list):
         areaids = [areaids]
@@ -167,24 +183,35 @@ def start_product_filtering(registry, message, **kwargs):
     for areaid in areaids:
         area_def = pr_utils.load_area(AREA_DEF_FILE, areaid)
         inside = granule_inside_area(
-            start_time, end_time, platform_name, area_def, tlefile)
+            start_time, end_time, platform_name, area_def, valid_tle_file)
         if inside:
             break
 
     if inside:
         LOG.info("Granule {0} inside one area".format(registry[scene_id]))
+
+        mletter = METOP_LETTER.get(platform_name)
+
+        # Now do the copying of the file to disk changing the filename!
+        if instrument in ['iasi']:
+            # Example: iasi_b__twt_l2p_1706211005.bin
+            filename = 'iasi_{0}__twt_l2p_{1}.bin'.format(mletter,
+                                                          start_time.strftime('%y%m%d%H%M'))
+        elif instrument in ['ascat']:
+            # Examples:
+            # ascat_b_ears250_1706211008.bin
+            # ascat_a_earscoa_1706211058.bin
+            product_name = str(message.data['product'])[0:3]
+            filename = 'ascat_{0}_ears{1}_{2}'.format(mletter,
+                                                      product_name,
+                                                      start_time.strftime('%y%m%d%H%M'))
+
+        local_filepath = os.path.join(OPTIONS['sir_local_dir'], filename)
+        sir_filepath = os.path.join(OPTIONS['sir_dir'], filename + '_original')
+        shutil.copy(urlobj.path, local_filepath)
+        shutil.copy(local_filepath, sir_filepath)
     else:
         LOG.info("Granule {0} outside all areas".format(registry[scene_id]))
-
-    # Now do the copying of the file to disk changing the filename!
-    # Example: iasi_b__twt_l2p_1706211005.bin
-    mletter = METOP_LETTER.get(platform_name)
-    filename = 'iasi_{0}__twt_l2p_{1}.bin'.format(mletter,
-                                                  start_time.strftime('%y%m%d%H%M'))
-    local_filepath = os.path.join(OPTIONS['sir_local_dir'], filename)
-    shutil.copy(urlobj.path, local_filepath)
-    sir_filepath = os.path.join(OPTIONS['sir_dir'], filename + '_original')
-    shutil.copy(local_filepath, sir_filepath)
 
     return registry
 
@@ -193,7 +220,7 @@ def product_filter_live_runner():
     """Listens and triggers processing"""
 
     LOG.info("*** Start the (EUMETCast) Product-filter runner:")
-    with posttroll.subscriber.Subscribe('', ['SOUNDING/IASI/L2/TWT', ], True) as subscr:
+    with posttroll.subscriber.Subscribe('', ['SOUNDING/IASI/L2/TWT', 'EARS/ASCAT/L2'], True) as subscr:
         with Publish('product_filter_runner', 0) as publisher:
             file_reg = {}
             for msg in subscr.recv():
