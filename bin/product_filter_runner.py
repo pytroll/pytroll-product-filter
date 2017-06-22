@@ -117,12 +117,6 @@ def start_product_filtering(registry, message, **kwargs):
         start_time = None
         return registry
 
-    if 'end_time' in message.data:
-        end_time = message.data['end_time']
-    else:
-        LOG.warning("No end time in message!")
-        end_time = start_time + timedelta(seconds=60 * 3)
-
     if message.data['instruments'] in ['iasi', 'ascat']:
         path, fname = os.path.split(urlobj.path)
         LOG.debug("path " + str(path) + " filename = " + str(fname))
@@ -136,6 +130,15 @@ def start_product_filtering(registry, message, **kwargs):
                   str(message.data['platform_name']) + " " +
                   str(message.data['instruments']))
         return registry
+
+    if 'end_time' in message.data:
+        end_time = message.data['end_time']
+    else:
+        LOG.warning("No end time in message!")
+        if instrument in ['iasi']:
+            end_time = start_time + timedelta(seconds=60 * 3)
+        elif instrument in ['ascat']:
+            end_time = start_time + timedelta(seconds=60 * 15)
 
     # Check that the input file really exists:
     if not os.path.exists(registry[scene_id]):
