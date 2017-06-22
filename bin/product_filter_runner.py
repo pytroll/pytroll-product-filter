@@ -74,7 +74,13 @@ from pyorbital.orbital import Orbital
 from pyresample.spherical_geometry import point_inside, Coordinate
 from pyresample import utils as pr_utils
 
-METOPS = {'METOPA': 'Metop-A', 'METOPB': 'Metop-B', 'METOPC': 'Metop-C'}
+METOPS = {'METOPA': 'Metop-A',
+          'metopa': 'Metop-A',
+          'METOPB': 'Metop-B',
+          'metopb': 'Metop-B',
+          'metopc': 'Metop-C',
+          'METOPC': 'Metop-C'}
+
 METOP_LETTER = {'Metop-A': 'a',
                 'Metop-B': 'b',
                 'Metop-C': 'c'}
