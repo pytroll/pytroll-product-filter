@@ -65,6 +65,16 @@ print("TLEDIR = {0}".format(TLEDIR))
 AREA_IDS = OPTIONS['areas_of_interest']
 AREA_DEF_FILE = os.path.join(CONFIG_PATH, "areas.def")
 
+MAIL_HOST = 'localhost'
+SENDER = OPTIONS.get('mail_sender', 'safusr.u@smhi.se')
+MAIL_FROM = '"Orbital determination error" <' + str(SENDER) + '>'
+try:
+    RECIPIENTS = OPTIONS.get("mail_subscribers").split()
+except AttributeError:
+    RECIPIENTS = "adam.dybbroe@smhi.se"
+MAIL_TO = RECIPIENTS
+MAIL_SUBJECT = 'New Critical Event From product_filtering'
+
 import sys
 from urlparse import urlparse
 import posttroll.subscriber
@@ -92,7 +102,16 @@ def granule_inside_area(start_time, end_time, platform_name, area_def, tle_file=
 
     """
 
-    metop = Orbital(platform_name, tle_file)
+    try:
+        metop = Orbital(platform_name, tle_file)
+    except KeyError:
+        LOG.exception(
+            'Failed getting orbital data for {0}'.format(platform_name))
+        LOG.critical(
+            'Cannot determine orbit! Probably TLE file problems...\n' +
+            'Granule will be set to be inside area of interest disregarding')
+        return True
+
     corners = area_def.corners
 
     is_inside = False
@@ -243,7 +262,7 @@ def product_filter_live_runner():
 
 
 if __name__ == "__main__":
-
+    from logging import handlers
     handler = logging.StreamHandler(sys.stderr)
 
     handler.setLevel(logging.DEBUG)
@@ -253,6 +272,13 @@ if __name__ == "__main__":
     logging.getLogger('').addHandler(handler)
     logging.getLogger('').setLevel(logging.DEBUG)
     logging.getLogger('posttroll').setLevel(logging.INFO)
+
+    smtp_handler = handlers.SMTPHandler(MAIL_HOST,
+                                        MAIL_FROM,
+                                        MAIL_TO,
+                                        MAIL_SUBJECT)
+    smtp_handler.setLevel(logging.CRITICAL)
+    logging.getLogger('').addHandler(smtp_handler)
 
     LOG = logging.getLogger('product_filter_runner')
 
