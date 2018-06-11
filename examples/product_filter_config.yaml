@@ -1,0 +1,32 @@
+log_rotation_days = 1
+log_rotation_backup = 10
+
+tle_dir = /data/24/saf/polar_in/tle
+
+iasi-lvl2:
+
+  areas_of_interest: [euron1, mali, irak]
+  message_types: ['SOUNDING/IASI/L2/TWT', 'EARS/ASCAT/L2']
+  
+
+  offline:
+    sir_dir = /tmp
+
+  prod:
+    sir_dir: /data/24/sirux/sir/data
+    sir_local_dir: /san1/sir
+    mail_subscribers: satsamonitoring@smhi.se
+    mail_sender: safuser@smhi.se
+
+  test:
+    sir_dir: /data/prodtest/sirux/sir/data
+    sir_local_dir: /san1/sir
+    mail_subscribers: satsamonitoring@smhi.se
+    mail_sender: safusr.t@smhi.se
+
+  utv:
+    sir_dir: /data/proj/siruxv/sir/data
+    sir_local_dir: /san1/sir
+    mail_subscribers: adam.dybbroe@smhi.se
+    mail_sender: safusr.u@smhi.se
+

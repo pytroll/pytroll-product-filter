@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2017 Adam.Dybbroe
+# Copyright (c) 2017, 2018 Adam.Dybbroe
 
 # Author(s):
 
@@ -24,56 +24,21 @@
 """
 
 import os
-import ConfigParser
+import yaml
 import shutil
 from glob import glob
 
 import logging
 LOG = logging.getLogger(__name__)
 
-CONFIG_PATH = os.environ.get('PRODUCT_FILTER_RUNNER_CONFIG_DIR', './')
 
-CONF = ConfigParser.ConfigParser()
-CONF.read(os.path.join(CONFIG_PATH, "product_filter_config.cfg"))
-
-MODE = os.getenv("SMHI_MODE")
-if MODE is None:
-    MODE = "offline"
+AREA_CONFIG_PATH = os.environ.get('PYTROLL_CONFIG_DIR', './')
 
 #: Default time format
 _DEFAULT_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 #: Default log format
 _DEFAULT_LOG_FORMAT = '[%(levelname)s: %(asctime)s : %(name)s] %(message)s'
-
-OPTIONS = {}
-for option, value in CONF.items(MODE, raw=True):
-    OPTIONS[option] = value
-
-SIR_DIR = OPTIONS['sir_dir']
-try:
-    SIR_LOCALDIR = OPTIONS['sir_local_dir']
-except KeyError:
-    SIR_LOCALDIR = None
-
-OPTIONS.update({k: OPTIONS[k].split(",")
-                for k in OPTIONS if "," in OPTIONS[k]})
-
-TLEDIR = OPTIONS['tle_dir']
-print("TLEDIR = {0}".format(TLEDIR))
-
-AREA_IDS = OPTIONS['areas_of_interest']
-AREA_DEF_FILE = os.path.join(CONFIG_PATH, "areas.def")
-
-MAIL_HOST = 'localhost'
-SENDER = OPTIONS.get('mail_sender', 'safusr.u@smhi.se')
-MAIL_FROM = '"Orbital determination error" <' + str(SENDER) + '>'
-try:
-    RECIPIENTS = OPTIONS.get("mail_subscribers").split()
-except AttributeError:
-    RECIPIENTS = "adam.dybbroe@smhi.se"
-MAIL_TO = RECIPIENTS
-MAIL_SUBJECT = 'New Critical Event From product_filtering'
 
 import sys
 from urlparse import urlparse
@@ -94,6 +59,75 @@ METOPS = {'METOPA': 'Metop-A',
 METOP_LETTER = {'Metop-A': 'a',
                 'Metop-B': 'b',
                 'Metop-C': 'c'}
+
+
+def get_arguments():
+    """
+    Get command line arguments
+    Return
+    name of the service and the config filepath
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-c', '--config_file',
+                        type=str,
+                        dest='config_file',
+                        default='',
+                        help="The file containing " +
+                        "configuration parameters e.g. zipcollector.cfg")
+    parser.add_argument("-s", "--service",
+                        help="Name of the service (e.g. iasi-lvl2)",
+                        dest="service",
+                        type=str,
+                        default="unknown")
+    parser.add_argument("-e", "--environment",
+                        help="The processing environment (utv/test/prod)",
+                        dest="environment",
+                        type=str,
+                        default="unknown")
+    parser.add_argument("-v", "--verbose",
+                        help="print debug messages too",
+                        action="store_true")
+
+    args = parser.parse_args()
+
+    if args.config_file == '':
+        print "Configuration file required! product_filter_runner.py <file>"
+        sys.exit()
+    if args.service == '':
+        print "Service required! Use command-line switch -e <environment>"
+        sys.exit()
+    else:
+        service = args.service.lower()
+
+    if 'template' in args.config_file:
+        print "Template file given as master config, aborting!"
+        sys.exit()
+
+    return environment, service, args.config_file
+
+
+def get_config(configfile, service, procenv):
+    """Get the configuration from file"""
+
+    with open(configfile, 'r') as fp_:
+        config = yaml.load(fp_)
+
+    options = {}
+    for item in config:
+        if not isinstance(config[item], dict):
+            options[item] = config[item]
+        elif item in [service]:
+            for key in config[service]:
+                if not isinstance(config[service][key], dict):
+                    options[key] = config[service][key]
+                elif key in [procenv]:
+                    for memb in config[service][key]:
+                        options[memb] = config[service][key][memb]
+
+    return options
 
 
 def granule_inside_area(start_time, end_time, platform_name, area_def, tle_file=None):
@@ -125,7 +159,7 @@ def granule_inside_area(start_time, end_time, platform_name, area_def, tle_file=
     return is_inside
 
 
-def start_product_filtering(registry, message, **kwargs):
+def start_product_filtering(registry, message, options, **kwargs):
     """From a posttroll/trollstalker message start the pytroll product filtering"""
 
     LOG.info("")
@@ -174,7 +208,8 @@ def start_product_filtering(registry, message, **kwargs):
     LOG.info("Sat and Instrument: " + platform_name + " " + instrument)
 
     # Now check if the area is within the area(s) of interest:
-    tle_dirs = TLEDIR
+
+    tle_dirs = options['tle_dir']
     if not isinstance(tle_dirs, list):
         tle_dirs = [tle_dirs]
     tle_files = []
@@ -202,21 +237,23 @@ def start_product_filtering(registry, message, **kwargs):
         LOG.error("Failed finding a valid tle file!")
         return registry
     else:
-        LOG.debug("Valid TLE file: {0}".format(valid_tle_file))
+        LOG.debug("Valid TLE file: %s", valid_tle_file)
 
-    areaids = AREA_IDS
+    area_def_file = os.path.join(AREA_CONFIG_PATH, "areas.def")
+
+    areaids = options['areas_of_interest']
     if not isinstance(areaids, list):
         areaids = [areaids]
     inside = False
     for areaid in areaids:
-        area_def = pr_utils.load_area(AREA_DEF_FILE, areaid)
+        area_def = pr_utils.load_area(area_def_file, areaid)
         inside = granule_inside_area(
             start_time, end_time, platform_name, area_def, valid_tle_file)
         if inside:
             break
 
     if inside:
-        LOG.info("Granule {0} inside one area".format(registry[scene_id]))
+        LOG.info("Granule %s inside one area", str(registry[scene_id]))
 
         mletter = METOP_LETTER.get(platform_name)
 
@@ -234,26 +271,27 @@ def start_product_filtering(registry, message, **kwargs):
                                                           product_name,
                                                           start_time.strftime('%y%m%d%H%M'))
 
-        local_filepath = os.path.join(OPTIONS['sir_local_dir'], filename)
-        sir_filepath = os.path.join(OPTIONS['sir_dir'], filename + '_original')
+        local_filepath = os.path.join(options['sir_local_dir'], filename)
+        sir_filepath = os.path.join(options['sir_dir'], filename + '_original')
         shutil.copy(urlobj.path, local_filepath)
         shutil.copy(local_filepath, sir_filepath)
     else:
-        LOG.info("Granule {0} outside all areas".format(registry[scene_id]))
+        LOG.info("Granule %s outside all areas", str(registry[scene_id]))
 
     return registry
 
 
-def product_filter_live_runner():
+def product_filter_live_runner(options):
     """Listens and triggers processing"""
 
     LOG.info("*** Start the (EUMETCast) Product-filter runner:")
-    with posttroll.subscriber.Subscribe('', ['SOUNDING/IASI/L2/TWT', 'EARS/ASCAT/L2'], True) as subscr:
+    LOG.debug("Listens for messages of type: %s", options['message_types'])
+    with posttroll.subscriber.Subscribe('', [options['message_types'], ], True) as subscr:
         with Publish('product_filter_runner', 0) as publisher:
             file_reg = {}
             for msg in subscr.recv():
                 file_reg = start_product_filtering(
-                    file_reg, msg, publisher=publisher)
+                    file_reg, msg, options, publisher=publisher)
                 # Cleanup in file registry (keep only the last 5):
                 keys = file_reg.keys()
                 if len(keys) > 5:
@@ -268,10 +306,24 @@ if __name__ == "__main__":
     handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter(fmt=_DEFAULT_LOG_FORMAT,
                                   datefmt=_DEFAULT_TIME_FORMAT)
+
     handler.setFormatter(formatter)
     logging.getLogger('').addHandler(handler)
     logging.getLogger('').setLevel(logging.DEBUG)
     logging.getLogger('posttroll').setLevel(logging.INFO)
+
+    (environment, service_name, config_filename) = get_arguments()
+    OPTIONS = get_config(config_filename, service_name, environment)
+
+    MAIL_HOST = 'localhost'
+    SENDER = OPTIONS.get('mail_sender', 'safusr.u@smhi.se')
+    MAIL_FROM = '"Orbital determination error" <' + str(SENDER) + '>'
+    try:
+        RECIPIENTS = OPTIONS.get("mail_subscribers").split()
+    except AttributeError:
+        RECIPIENTS = "adam.dybbroe@smhi.se"
+    MAIL_TO = RECIPIENTS
+    MAIL_SUBJECT = 'New Critical Event From product_filtering'
 
     smtp_handler = handlers.SMTPHandler(MAIL_HOST,
                                         MAIL_FROM,
@@ -282,4 +334,4 @@ if __name__ == "__main__":
 
     LOG = logging.getLogger('product_filter_runner')
 
-    product_filter_live_runner()
+    product_filter_live_runner(OPTIONS)
