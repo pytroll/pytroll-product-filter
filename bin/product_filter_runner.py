@@ -96,11 +96,15 @@ def get_arguments():
     if args.config_file == '':
         print "Configuration file required! product_filter_runner.py <file>"
         sys.exit()
+    if args.environment == '':
+        print "Environment required! Use command-line switch -s <service name>"
+        sys.exit()
     if args.service == '':
         print "Service required! Use command-line switch -e <environment>"
         sys.exit()
-    else:
-        service = args.service.lower()
+
+    service = args.service.lower()
+    environment = args.environment.lower()
 
     if 'template' in args.config_file:
         print "Template file given as master config, aborting!"
@@ -312,8 +316,8 @@ if __name__ == "__main__":
     logging.getLogger('').setLevel(logging.DEBUG)
     logging.getLogger('posttroll').setLevel(logging.INFO)
 
-    (environment, service_name, config_filename) = get_arguments()
-    OPTIONS = get_config(config_filename, service_name, environment)
+    (environ, service_name, config_filename) = get_arguments()
+    OPTIONS = get_config(config_filename, service_name, environ)
 
     MAIL_HOST = 'localhost'
     SENDER = OPTIONS.get('mail_sender', 'safusr.u@smhi.se')
