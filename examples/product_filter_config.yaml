@@ -1,16 +1,15 @@
-log_rotation_days = 1
-log_rotation_backup = 10
+log_rotation_days: 1
+log_rotation_backup: 10
 
-tle_dir = /data/24/saf/polar_in/tle
+tle_dir: /data/24/saf/polar_in/tle
 
 iasi-lvl2:
 
   areas_of_interest: [euron1, mali, irak]
   message_types: ['SOUNDING/IASI/L2/TWT', 'EARS/ASCAT/L2']
-  
 
   offline:
-    sir_dir = /tmp
+    sir_dir: /tmp
 
   prod:
     sir_dir: /data/24/sirux/sir/data

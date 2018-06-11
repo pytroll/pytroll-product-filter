@@ -289,8 +289,8 @@ def product_filter_live_runner(options):
     """Listens and triggers processing"""
 
     LOG.info("*** Start the (EUMETCast) Product-filter runner:")
-    LOG.debug("Listens for messages of type: %s", options['message_types'])
-    with posttroll.subscriber.Subscribe('', [options['message_types'], ], True) as subscr:
+    LOG.debug("Listens for messages of type: %s", str(options['message_types']))
+    with posttroll.subscriber.Subscribe('', options['message_types'], True) as subscr:
         with Publish('product_filter_runner', 0) as publisher:
             file_reg = {}
             for msg in subscr.recv():
