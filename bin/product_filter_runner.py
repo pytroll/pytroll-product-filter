@@ -181,10 +181,11 @@ def start_product_filtering(registry, message, options, **kwargs):
         start_time = None
         return registry
 
-    if message.data['instruments'] in ['iasi', 'ascat']:
+    if message.data['instruments'] in options['instrument']:
         path, fname = os.path.split(urlobj.path)
         LOG.debug("path " + str(path) + " filename = " + str(fname))
         instrument = str(message.data['instruments'])
+        LOG.debug("Instrument %r supported!", instrument)
         platform_name = METOPS.get(
             message.data['satellite'], message.data['satellite'])
         registry[scene_id] = os.path.join(path, fname)
