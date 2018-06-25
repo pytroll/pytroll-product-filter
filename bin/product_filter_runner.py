@@ -27,6 +27,7 @@ import os
 import yaml
 import shutil
 from glob import glob
+from trollsift.parser import parse, globify, Parser
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -76,7 +77,7 @@ def get_arguments():
                         dest='config_file',
                         default='',
                         help="The file containing " +
-                        "configuration parameters e.g. zipcollector.cfg")
+                        "configuration parameters e.g. product_filter_config.yaml")
     parser.add_argument("-s", "--service",
                         help="Name of the service (e.g. iasi-lvl2)",
                         dest="service",
@@ -218,20 +219,24 @@ def start_product_filtering(registry, message, options, **kwargs):
         tle_dirs = [tle_dirs]
     tle_files = []
     for tledir in tle_dirs:
-        tle_files = tle_files + glob(os.path.join(tledir, 'tle-*.txt'))
+        tle_files = tle_files + glob(os.path.join(tledir, globify(options['tlefilename'])))
+
+    tlep = Parser(options['tlefilename'])
 
     time_thr = timedelta(days=5)
     utcnow = datetime.utcnow()
     valid_tle_file = None
     for tlefile in tle_files:
         fname = os.path.basename(tlefile)
-        try:
-            dtobj = datetime.strptime(
-                fname.split('tle-')[-1].split('.txt')[0], '%Y%m%d')
-        except ValueError:
-            LOG.warning("Failed determine the date-time of the tle-file")
-            valid_tle_file = tlefile
-            break
+        res = tlep.parse(fname)
+        dtobj = res['time']
+        # try:
+        #     dtobj=datetime.strptime(
+        #         fname.split('tle-')[-1].split('.txt')[0], '%Y%m%d')
+        # except ValueError:
+        #     LOG.warning("Failed determine the date-time of the tle-file")
+        #     valid_tle_file=tlefile
+        #     break
         delta_t = abs(utcnow - dtobj)
         if delta_t < time_thr:
             time_thr = delta_t
@@ -278,7 +283,9 @@ def start_product_filtering(registry, message, options, **kwargs):
         local_filepath = os.path.join(options['sir_local_dir'], filename)
         sir_filepath = os.path.join(options['sir_dir'], filename + '_original')
         shutil.copy(urlobj.path, local_filepath)
+        LOG.info("File copied from %s to %s", urlobj.path, local_filepath)
         shutil.copy(local_filepath, sir_filepath)
+        LOG.info("File copied from %s to %s", local_filepath, sir_filepath)
     else:
         LOG.info("Granule %s outside all areas", str(registry[scene_id]))
 

@@ -2,6 +2,7 @@ log_rotation_days: 1
 log_rotation_backup: 10
 
 tle_dir: /data/24/saf/polar_in/tle
+tlefilename: tle-{time:%Y%m%d%H%M}.txt
 
 iasi-lvl2:
 
