@@ -28,6 +28,16 @@ import yaml
 import shutil
 from glob import glob
 from trollsift.parser import parse, globify, Parser
+from trollsched.satpass import Pass
+
+import sys
+from urlparse import urlparse
+import posttroll.subscriber
+from posttroll.publisher import Publish
+from datetime import timedelta, datetime
+#from pyorbital.orbital import Orbital
+from pyresample import utils as pr_utils
+from product_filter import granule_inside_area
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -40,15 +50,6 @@ _DEFAULT_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 #: Default log format
 _DEFAULT_LOG_FORMAT = '[%(levelname)s: %(asctime)s : %(name)s] %(message)s'
-
-import sys
-from urlparse import urlparse
-import posttroll.subscriber
-from posttroll.publisher import Publish
-from datetime import timedelta, datetime
-from pyorbital.orbital import Orbital
-from pyresample.spherical_geometry import point_inside, Coordinate
-from pyresample import utils as pr_utils
 
 METOPS = {'METOPA': 'Metop-A',
           'metopa': 'Metop-A',
@@ -133,35 +134,6 @@ def get_config(configfile, service, procenv):
                         options[memb] = config[service][key][memb]
 
     return options
-
-
-def granule_inside_area(start_time, end_time, platform_name, area_def, tle_file=None):
-    """Check if a satellite data granule is over area interest, using the start and
-    end times from the filename
-
-    """
-
-    try:
-        metop = Orbital(platform_name, tle_file)
-    except KeyError:
-        LOG.exception(
-            'Failed getting orbital data for {0}'.format(platform_name))
-        LOG.critical(
-            'Cannot determine orbit! Probably TLE file problems...\n' +
-            'Granule will be set to be inside area of interest disregarding')
-        return True
-
-    corners = area_def.corners
-
-    is_inside = False
-    for dtobj in [start_time, end_time]:
-        lon, lat, dummy = metop.get_lonlatalt(dtobj)
-        point = Coordinate(lon, lat)
-        if point_inside(point, corners):
-            is_inside = True
-            break
-
-    return is_inside
 
 
 def start_product_filtering(registry, message, options, **kwargs):
