@@ -52,7 +52,7 @@ class NoValidTles(Exception):
     pass
 
 
-class SceneNotSupported(exception):
+class SceneNotSupported(Exception):
     pass
 
 
