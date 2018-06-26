@@ -65,8 +65,6 @@ class GranuleFilter(object):
         self.tle_dirs = config['tle_dir']
         self.tlefilename = config['tlefilename']
         self.areaids = config['areas_of_interest']
-        self.sir_local_dir = config['sir_local_dir']
-        self.sir_dir = config['sir_dir']
 
     def __call__(self, message):
 
@@ -134,9 +132,9 @@ class GranuleFilter(object):
             LOG.debug("Valid TLE file: %s", valid_tle_file)
 
         if not isinstance(self.areaids, list):
-            areaids = [self.areaids]
+            self.areaids = [self.areaids]
         inside = False
-        for areaid in areaids:
+        for areaid in self.areaids:
             area_def = pr_utils.load_area(self.area_def_file, areaid)
             inside = granule_inside_area(start_time, end_time,
                                          platform_name, self.instrument,
