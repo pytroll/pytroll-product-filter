@@ -69,7 +69,7 @@ ascat-gds-lvl2:
     delete: yes
     
   prod:
-    delete: yes: 
+    delete: yes
 
   test:
     delete: yes
