@@ -9,6 +9,7 @@ iasi-lvl2:
   areas_of_interest: [euron1, mali, irak]
   message_types: ['SOUNDING/IASI/L2/TWT']
   instrument: 'iasi'
+  passlength_seconds: 180
   
   offline:
     sir_dir: /tmp
@@ -36,6 +37,7 @@ ascat-ears-lvl2:
   areas_of_interest: [euron1, mali, irak]
   message_types: ['EARS/ASCAT/L2']
   instrument: 'ascat'
+  passlength_seconds: 180
   
   offline:
     sir_dir: /tmp
@@ -64,7 +66,8 @@ ascat-gds-lvl2:
   areas_of_interest: [euron1]
   message_types: ['GDS/ASCAT/L2']
   instrument: 'ascat'
-
+  passlength_seconds: 180
+  
   offline:
     delete: yes
     

@@ -65,6 +65,7 @@ class GranuleFilter(object):
         self.tle_dirs = config['tle_dir']
         self.tlefilename = config['tlefilename']
         self.areaids = config['areas_of_interest']
+        self.passlength_seconds = config['passlength_seconds']
 
     def __call__(self, message):
 
@@ -93,10 +94,7 @@ class GranuleFilter(object):
             end_time = message.data['end_time']
         else:
             LOG.warning("No end time in message!")
-            if instrument in ['iasi']:
-                end_time = start_time + timedelta(seconds=60 * 3)
-            elif instrument in ['ascat']:
-                end_time = start_time + timedelta(seconds=60 * 15)
+            end_time = start_time + timedelta(seconds=self.passlength_seconds)
 
         # Check that the input file really exists:
         if not os.path.exists(filepath):

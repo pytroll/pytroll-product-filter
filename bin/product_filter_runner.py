@@ -164,6 +164,8 @@ def start_product_filtering(registry, message, options, **kwargs):
             LOG.info("File copied from %s to %s", urlobj.path, local_filepath)
             shutil.copy(local_filepath, sir_filepath)
             LOG.info("File copied from %s to %s", local_filepath, sir_filepath)
+        else:
+            LOG.info("Don't do anything with this file...")
 
     else:
         LOG.info("Granule %s outside all areas", str(registry[scene_id]))
