@@ -23,21 +23,20 @@
 """Posttroll runner for the product-filtering
 """
 
+import sys
 import os
-import yaml
 import shutil
 from glob import glob
-from trollsift.parser import parse, globify, Parser
-from trollsched.satpass import Pass
-
-import sys
+from trollsift.parser import globify, Parser
 from urlparse import urlparse
 import posttroll.subscriber
 from posttroll.publisher import Publish
 from datetime import timedelta, datetime
-#from pyorbital.orbital import Orbital
 from pyresample import utils as pr_utils
-from product_filter import granule_inside_area
+from product_filter import (granule_inside_area,
+                            get_config,
+                            GranuleFilter)
+from product_filter import (InconsistentMessage, NoValidTles, SceneNotSupported)
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -115,27 +114,6 @@ def get_arguments():
     return environment, service, args.config_file
 
 
-def get_config(configfile, service, procenv):
-    """Get the configuration from file"""
-
-    with open(configfile, 'r') as fp_:
-        config = yaml.load(fp_)
-
-    options = {}
-    for item in config:
-        if not isinstance(config[item], dict):
-            options[item] = config[item]
-        elif item in [service]:
-            for key in config[service]:
-                if not isinstance(config[service][key], dict):
-                    options[key] = config[service][key]
-                elif key in [procenv]:
-                    for memb in config[service][key]:
-                        options[memb] = config[service][key][memb]
-
-    return options
-
-
 def start_product_filtering(registry, message, options, **kwargs):
     """From a posttroll/trollstalker message start the pytroll product filtering"""
 
@@ -143,100 +121,26 @@ def start_product_filtering(registry, message, options, **kwargs):
     LOG.info("registry dict: " + str(registry))
     LOG.info("\tMessage:")
     LOG.info(message)
-    urlobj = urlparse(message.data['uri'])
-
-    if 'start_time' in message.data:
-        start_time = message.data['start_time']
-        scene_id = start_time.strftime('%Y%m%d%H%M')
-    else:
-        LOG.warning("No start time in message!")
-        start_time = None
-        return registry
-
-    if message.data['instruments'] in options['instrument']:
-        path, fname = os.path.split(urlobj.path)
-        LOG.debug("path " + str(path) + " filename = " + str(fname))
-        instrument = str(message.data['instruments'])
-        LOG.debug("Instrument %r supported!", instrument)
-        platform_name = METOPS.get(
-            message.data['satellite'], message.data['satellite'])
-        registry[scene_id] = os.path.join(path, fname)
-    else:
-        LOG.debug("Scene is not supported")
-        LOG.debug("platform and instrument: " +
-                  str(message.data['platform_name']) + " " +
-                  str(message.data['instruments']))
-        return registry
-
-    if 'end_time' in message.data:
-        end_time = message.data['end_time']
-    else:
-        LOG.warning("No end time in message!")
-        if instrument in ['iasi']:
-            end_time = start_time + timedelta(seconds=60 * 3)
-        elif instrument in ['ascat']:
-            end_time = start_time + timedelta(seconds=60 * 15)
-
-    # Check that the input file really exists:
-    if not os.path.exists(registry[scene_id]):
-        LOG.error("File %s does not exist. Don't do anything...",
-                  str(registry))
-        return registry
-
-    LOG.info("Sat and Instrument: " + platform_name + " " + instrument)
-
-    # Now check if the area is within the area(s) of interest:
-
-    tle_dirs = options['tle_dir']
-    if not isinstance(tle_dirs, list):
-        tle_dirs = [tle_dirs]
-    tle_files = []
-    for tledir in tle_dirs:
-        tle_files = tle_files + glob(os.path.join(tledir, globify(options['tlefilename'])))
-
-    tlep = Parser(options['tlefilename'])
-
-    time_thr = timedelta(days=5)
-    utcnow = datetime.utcnow()
-    valid_tle_file = None
-    for tlefile in tle_files:
-        fname = os.path.basename(tlefile)
-        res = tlep.parse(fname)
-        dtobj = res['time']
-        # try:
-        #     dtobj=datetime.strptime(
-        #         fname.split('tle-')[-1].split('.txt')[0], '%Y%m%d')
-        # except ValueError:
-        #     LOG.warning("Failed determine the date-time of the tle-file")
-        #     valid_tle_file=tlefile
-        #     break
-        delta_t = abs(utcnow - dtobj)
-        if delta_t < time_thr:
-            time_thr = delta_t
-            valid_tle_file = tlefile
-
-    if not valid_tle_file:
-        LOG.error("Failed finding a valid tle file!")
-        return registry
-    else:
-        LOG.debug("Valid TLE file: %s", valid_tle_file)
 
     area_def_file = os.path.join(AREA_CONFIG_PATH, "areas.def")
+    try:
+        granule_ok = GranuleFilter(options, area_def_file)(message)
+    except (InconsistentMessage, NoValidTles, SceneNotSupported, IOError) as e__:
+        LOG.exception("Could not do the granule filtering...")
+        return registry
 
-    areaids = options['areas_of_interest']
-    if not isinstance(areaids, list):
-        areaids = [areaids]
-    inside = False
-    for areaid in areaids:
-        area_def = pr_utils.load_area(area_def_file, areaid)
-        inside = granule_inside_area(
-            start_time, end_time, platform_name, area_def, valid_tle_file)
-        if inside:
-            break
+    urlobj = urlparse(message.data['uri'])
 
-    if inside:
+    start_time = message.data['start_time']
+    scene_id = start_time.strftime('%Y%m%d%H%M')
+    instrument = str(message.data['instruments'])
+    platform_name = METOPS.get(
+        message.data['satellite'], message.data['satellite'])
+    path, fname = os.path.split(urlobj.path)
+    registry[scene_id] = os.path.join(path, fname)
+
+    if granule_ok:
         LOG.info("Granule %s inside one area", str(registry[scene_id]))
-
         mletter = METOP_LETTER.get(platform_name)
 
         # Now do the copying of the file to disk changing the filename!
@@ -253,14 +157,20 @@ def start_product_filtering(registry, message, options, **kwargs):
                                                           product_name,
                                                           start_time.strftime('%y%m%d%H%M'))
 
-        local_filepath = os.path.join(options['sir_local_dir'], filename)
-        sir_filepath = os.path.join(options['sir_dir'], filename + '_original')
-        shutil.copy(urlobj.path, local_filepath)
-        LOG.info("File copied from %s to %s", urlobj.path, local_filepath)
-        shutil.copy(local_filepath, sir_filepath)
-        LOG.info("File copied from %s to %s", local_filepath, sir_filepath)
+        if 'sir_local_dir' in options:
+            local_filepath = os.path.join(options['sir_local_dir'], filename)
+            sir_filepath = os.path.join(options['sir_dir'], filename + '_original')
+            shutil.copy(urlobj.path, local_filepath)
+            LOG.info("File copied from %s to %s", urlobj.path, local_filepath)
+            shutil.copy(local_filepath, sir_filepath)
+            LOG.info("File copied from %s to %s", local_filepath, sir_filepath)
+
     else:
         LOG.info("Granule %s outside all areas", str(registry[scene_id]))
+        if 'delete' in options and options['delete'] == 'yes':
+            # No SIR distribution. Files should be removed on site if outside area:
+            LOG.info("Remove file from disk: %s", urlobj.path)
+            # os.remove(urlobj.path)
 
     return registry
 

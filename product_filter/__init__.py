@@ -23,14 +23,153 @@
 """Package file for the product-filter
 """
 
+import os
+import yaml
+from urlparse import urlparse
 from pyorbital.orbital import Orbital
+from datetime import timedelta, datetime
 from trollsched.satpass import Pass
-#from pyresample.spherical_geometry import point_inside, Coordinate
+from trollsift.parser import globify, Parser
+from pyresample import utils as pr_utils
+from glob import glob
+
 import logging
 LOG = logging.getLogger(__name__)
 
+METOPS = {'METOPA': 'Metop-A',
+          'metopa': 'Metop-A',
+          'METOPB': 'Metop-B',
+          'metopb': 'Metop-B',
+          'metopc': 'Metop-C',
+          'METOPC': 'Metop-C'}
 
-def granule_inside_area(start_time, end_time, platform_name, area_def, tle_file=None):
+
+class InconsistentMessage(Exception):
+    pass
+
+
+class NoValidTles(Exception):
+    pass
+
+
+class SceneNotSupported(exception):
+    pass
+
+
+class GranuleFilter(object):
+
+    def __init__(self, config, area_def_file):
+
+        self.area_def_file = area_def_file
+        self.instrument = config['instrument']
+        self.tle_dirs = config['tle_dir']
+        self.tlefilename = config['tlefilename']
+        self.areaids = config['areas_of_interest']
+        self.sir_local_dir = config['sir_local_dir']
+        self.sir_dir = config['sir_dir']
+
+    def __call__(self, message):
+
+        urlobj = urlparse(message.data['uri'])
+
+        if 'start_time' in message.data:
+            start_time = message.data['start_time']
+        else:
+            raise InconsistentMessage("No start time in message!")
+
+        if message.data['instruments'] in self.instrument:
+            path, fname = os.path.split(urlobj.path)
+            LOG.debug("path " + str(path) + " filename = " + str(fname))
+            instrument = str(message.data['instruments'])
+            LOG.debug("Instrument %r supported!", instrument)
+            platform_name = METOPS.get(
+                message.data['satellite'], message.data['satellite'])
+            filepath = os.path.join(path, fname)
+        else:
+            LOG.debug("Scene is not supported")
+            raise SceneNotSupported("platform and instrument: " +
+                                    str(message.data['platform_name']) + " " +
+                                    str(message.data['instruments']))
+
+        if 'end_time' in message.data:
+            end_time = message.data['end_time']
+        else:
+            LOG.warning("No end time in message!")
+            if instrument in ['iasi']:
+                end_time = start_time + timedelta(seconds=60 * 3)
+            elif instrument in ['ascat']:
+                end_time = start_time + timedelta(seconds=60 * 15)
+
+        # Check that the input file really exists:
+        if not os.path.exists(filepath):
+            #LOG.error("File %s does not exist. Don't do anything...", filepath)
+            raise IOError("File %s does not exist. Don't do anything...", filepath)
+
+        LOG.info("Sat and Instrument: " + platform_name + " " + instrument)
+
+        if not isinstance(self.tle_dirs, list):
+            tle_dirs = [self.tle_dirs]
+        tle_files = []
+        for tledir in tle_dirs:
+            tle_files = tle_files + glob(os.path.join(tledir, globify(self.tlefilename)))
+
+        tlep = Parser(self.tlefilename)
+
+        time_thr = timedelta(days=5)
+        utcnow = datetime.utcnow()
+        valid_tle_file = None
+        for tlefile in tle_files:
+            fname = os.path.basename(tlefile)
+            res = tlep.parse(fname)
+            dtobj = res['time']
+
+            delta_t = abs(utcnow - dtobj)
+            if delta_t < time_thr:
+                time_thr = delta_t
+                valid_tle_file = tlefile
+
+        if not valid_tle_file:
+            raise NoValidTles("Failed finding a valid tle file!")
+        else:
+            LOG.debug("Valid TLE file: %s", valid_tle_file)
+
+        if not isinstance(self.areaids, list):
+            areaids = [self.areaids]
+        inside = False
+        for areaid in areaids:
+            area_def = pr_utils.load_area(self.area_def_file, areaid)
+            inside = granule_inside_area(start_time, end_time,
+                                         platform_name, self.instrument,
+                                         area_def, valid_tle_file)
+            if inside:
+                return True
+
+        return False
+
+
+def get_config(configfile, service, procenv):
+    """Get the configuration from file"""
+
+    with open(configfile, 'r') as fp_:
+        config = yaml.load(fp_)
+
+    options = {}
+    for item in config:
+        if not isinstance(config[item], dict):
+            options[item] = config[item]
+        elif item in [service]:
+            for key in config[service]:
+                if not isinstance(config[service][key], dict):
+                    options[key] = config[service][key]
+                elif key in [procenv]:
+                    for memb in config[service][key]:
+                        options[memb] = config[service][key][memb]
+
+    return options
+
+
+def granule_inside_area(start_time, end_time, platform_name, instrument,
+                        area_def, tle_file=None):
     """Check if a satellite data granule is over area interest, using the start and
     end times from the filename
 
@@ -49,19 +188,9 @@ def granule_inside_area(start_time, end_time, platform_name, area_def, tle_file=
     tle1 = metop.tle.line1
     tle2 = metop.tle.line2
 
-    mypass = Pass(platform_name, start_time, end_time, None, None, instrument='ascat',
+    mypass = Pass(platform_name, start_time, end_time, None, None, instrument=instrument,
                   tle1=tle1, tle2=tle2, frequency=500)
     acov = mypass.area_coverage(area_def)
     LOG.debug("Granule coverage of area: %f", acov)
 
     return (acov > 0.10)
-
-    # is_inside = False
-    # corners = area_def.corners
-    # for dtobj in [start_time, end_time]:
-    #     lon, lat, dummy = metop.get_lonlatalt(dtobj)
-    #     point = Coordinate(lon, lat)
-    #     if point_inside(point, corners):
-    #         is_inside = True
-    #         break
-    # return is_inside
