@@ -75,7 +75,7 @@ class GranuleFilter(object):
         else:
             raise InconsistentMessage("No start time in message!")
 
-        if message.data['instruments'] in self.instrument:
+        if message.data['instruments'] == self.instrument:
             path, fname = os.path.split(urlobj.path)
             LOG.debug("path " + str(path) + " filename = " + str(fname))
             instrument = str(message.data['instruments'])
