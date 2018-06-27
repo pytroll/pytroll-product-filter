@@ -172,7 +172,11 @@ def start_product_filtering(registry, message, options, **kwargs):
         if 'delete' in options and options['delete'] == 'yes':
             # No SIR distribution. Files should be removed on site if outside area:
             LOG.info("Remove file from disk: %s", urlobj.path)
-            # os.remove(urlobj.path)
+            if 'dryrun' in options and options['dryrun'] == 'yes':
+                LOG.info("Dry-run: Don't delete it!")
+            else:
+                LOG.debug("...deleting")
+                os.remove(urlobj.path)
 
     return registry
 

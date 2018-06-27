@@ -70,13 +70,16 @@ ascat-gds-lvl2:
   
   offline:
     delete: yes
+    dryrun: yes
     
   prod:
     delete: yes
+    dryrun: no
 
   test:
     delete: yes
+    dryrun: yes
 
   utv:
     delete: yes
-
+    dryrun: yes
