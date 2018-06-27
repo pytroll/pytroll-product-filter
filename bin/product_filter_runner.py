@@ -177,6 +177,12 @@ def start_product_filtering(registry, message, options, **kwargs):
             else:
                 LOG.debug("...deleting")
                 os.remove(urlobj.path)
+        else:
+            LOG.debug("No action configured for this. Do nothing...")
+            if 'delete' in options:
+                LOG.debug("delete: %s", options['delete'])
+            if 'dryrun' in options:
+                LOG.debug("dryrun: %s", options['dryrun'])
 
     return registry
 

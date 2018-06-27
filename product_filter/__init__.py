@@ -189,9 +189,9 @@ def granule_inside_area(start_time, end_time, platform_name, instrument,
     acov = mypass.area_coverage(area_def)
     LOG.debug("Granule coverage of area: %f", acov)
 
-    #from trollsched.boundary import AreaDefBoundary
-    #area_boundary = AreaDefBoundary(area_def, frequency=500)
-    #area_boundary = area_boundary.contour_poly
-    #mypass.save_fig(poly=area_boundary, directory='/tmp')
+    # from trollsched.boundary import AreaDefBoundary
+    # area_boundary = AreaDefBoundary(area_def, frequency=500)
+    # area_boundary = area_boundary.contour_poly
+    # mypass.save_fig(poly=area_boundary, directory='/tmp')
 
     return (acov > 0.10)
