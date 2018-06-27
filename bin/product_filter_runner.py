@@ -169,10 +169,10 @@ def start_product_filtering(registry, message, options, **kwargs):
 
     else:
         LOG.info("Granule %s outside all areas", str(registry[scene_id]))
-        if 'delete' in options and options['delete'] == 'yes':
+        if 'delete' in options and options['delete']:
             # No SIR distribution. Files should be removed on site if outside area:
             LOG.info("Remove file from disk: %s", urlobj.path)
-            if 'dryrun' in options and options['dryrun'] == 'yes':
+            if 'dryrun' in options and options['dryrun']:
                 LOG.info("Dry-run: Don't delete it!")
             else:
                 LOG.debug("...deleting")
