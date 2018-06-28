@@ -65,7 +65,7 @@ ascat-ears-lvl2:
 
 ascat-gds-lvl2:
 
-  areas_of_interest: [euron1]
+  areas_of_interest: [arome]
   min_coverage: 0.01
   message_types: ['GDS/ASCAT/L2']
   instrument: 'ascat'
