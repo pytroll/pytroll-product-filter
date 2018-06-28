@@ -65,6 +65,7 @@ class GranuleFilter(object):
         self.tle_dirs = config['tle_dir']
         self.tlefilename = config['tlefilename']
         self.areaids = config['areas_of_interest']
+        self.min_coverage = config['min_coverage']
         self.passlength_seconds = config['passlength_seconds']
 
     def __call__(self, message):
@@ -136,7 +137,8 @@ class GranuleFilter(object):
             area_def = pr_utils.load_area(self.area_def_file, areaid)
             inside = granule_inside_area(start_time, end_time,
                                          platform_name, self.instrument,
-                                         area_def, valid_tle_file)
+                                         area_def, self.min_coverage,
+                                         valid_tle_file)
             if inside:
                 return True
 
@@ -165,7 +167,7 @@ def get_config(configfile, service, procenv):
 
 
 def granule_inside_area(start_time, end_time, platform_name, instrument,
-                        area_def, tle_file=None):
+                        area_def, thr_area_coverage, tle_file=None):
     """Check if a satellite data granule is over area interest, using the start and
     end times from the filename
 
@@ -194,4 +196,4 @@ def granule_inside_area(start_time, end_time, platform_name, instrument,
     # area_boundary = area_boundary.contour_poly
     # mypass.save_fig(poly=area_boundary, directory='/tmp')
 
-    return (acov > 0.10)
+    return (acov > thr_area_coverage)

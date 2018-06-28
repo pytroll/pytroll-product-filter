@@ -7,6 +7,7 @@ tlefilename: tle-{time:%Y%m%d%H%M}.txt
 iasi-lvl2:
 
   areas_of_interest: [euron1, mali, irak]
+  min_coverage: 0.05
   message_types: ['SOUNDING/IASI/L2/TWT']
   instrument: 'iasi'
   passlength_seconds: 180
@@ -35,6 +36,7 @@ iasi-lvl2:
 ascat-ears-lvl2:
 
   areas_of_interest: [euron1, mali, irak]
+  min_coverage: 0.05
   message_types: ['EARS/ASCAT/L2']
   instrument: 'ascat'
   passlength_seconds: 180
@@ -64,9 +66,11 @@ ascat-ears-lvl2:
 ascat-gds-lvl2:
 
   areas_of_interest: [euron1]
+  min_coverage: 0.01
   message_types: ['GDS/ASCAT/L2']
   instrument: 'ascat'
   passlength_seconds: 180
+  
   
   offline:
     delete: yes

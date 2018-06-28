@@ -26,15 +26,10 @@
 import sys
 import os
 import shutil
-from glob import glob
-from trollsift.parser import globify, Parser
 from urlparse import urlparse
 import posttroll.subscriber
 from posttroll.publisher import Publish
-from datetime import timedelta, datetime
-from pyresample import utils as pr_utils
-from product_filter import (granule_inside_area,
-                            get_config,
+from product_filter import (get_config,
                             GranuleFilter)
 from product_filter import (InconsistentMessage, NoValidTles, SceneNotSupported)
 
