@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2017, 2018 Adam.Dybbroe
+# Copyright (c) 2017, 2018, 2019 Adam.Dybbroe
 
 # Author(s):
 
@@ -96,6 +96,7 @@ class GranuleFilter(object):
         else:
             LOG.warning("No end time in message!")
             end_time = start_time + timedelta(seconds=self.passlength_seconds)
+            LOG.info("End time set to: %s", str(end_time))
 
         # Check that the input file really exists:
         if not os.path.exists(filepath):
@@ -189,11 +190,12 @@ def granule_inside_area(start_time, end_time, platform_name, instrument,
     mypass = Pass(platform_name, start_time, end_time, instrument=instrument,
                   tle1=tle1, tle2=tle2)
     acov = mypass.area_coverage(area_def)
-    LOG.debug("Granule coverage of area: %f", acov)
+    LOG.debug("Granule coverage of area %s: %f", area_def.area_id, acov)
 
-    # from trollsched.boundary import AreaDefBoundary
-    # area_boundary = AreaDefBoundary(area_def, frequency=500)
-    # area_boundary = area_boundary.contour_poly
-    # mypass.save_fig(poly=area_boundary, directory='/tmp')
+    from pyresample.boundary import AreaDefBoundary
+    from trollsched.drawing import save_fig
+    area_boundary = AreaDefBoundary(area_def, frequency=100)
+    area_boundary = area_boundary.contour_poly
+    save_fig(mypass, poly=area_boundary, directory='/tmp')
 
     return (acov > thr_area_coverage)
