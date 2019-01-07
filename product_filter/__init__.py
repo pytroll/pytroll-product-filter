@@ -67,6 +67,7 @@ class GranuleFilter(object):
         self.areaids = config['areas_of_interest']
         self.min_coverage = config['min_coverage']
         self.passlength_seconds = config['passlength_seconds']
+        self.save_coverage_plot = config.get('save_coverage_plot', False)
 
     def __call__(self, message):
 
@@ -136,14 +137,50 @@ class GranuleFilter(object):
         inside = False
         for areaid in self.areaids:
             area_def = pr_utils.load_area(self.area_def_file, areaid)
-            inside = granule_inside_area(start_time, end_time,
-                                         platform_name, self.instrument,
-                                         area_def, self.min_coverage,
-                                         valid_tle_file)
+            inside = self.granule_inside_area(start_time, end_time,
+                                              platform_name,
+                                              area_def,
+                                              valid_tle_file)
             if inside:
                 return True
 
         return False
+
+    def granule_inside_area(self, start_time, end_time, platform_name,
+                            area_def, tle_file=None):
+        """Check if a satellite data granule is over area interest, using the start and
+        end times from the filename
+
+        """
+
+        try:
+            metop = Orbital(platform_name, tle_file)
+        except KeyError:
+            LOG.exception(
+                'Failed getting orbital data for {0}'.format(platform_name))
+            LOG.critical(
+                'Cannot determine orbit! Probably TLE file problems...\n' +
+                'Granule will be set to be inside area of interest disregarding')
+            return True
+
+        tle1 = metop.tle.line1
+        tle2 = metop.tle.line2
+
+        mypass = Pass(platform_name, start_time, end_time, instrument=self.instrument,
+                      tle1=tle1, tle2=tle2)
+        acov = mypass.area_coverage(area_def)
+        LOG.debug("Granule coverage of area %s: %f", area_def.area_id, acov)
+
+        is_inside = (acov > self.min_coverage)
+
+        if is_inside and self.save_coverage_plot:
+            from pyresample.boundary import AreaDefBoundary
+            from trollsched.drawing import save_fig
+            area_boundary = AreaDefBoundary(area_def, frequency=100)
+            area_boundary = area_boundary.contour_poly
+            save_fig(mypass, poly=area_boundary, directory='/tmp')
+
+        return
 
 
 def get_config(configfile, service, procenv):
@@ -192,10 +229,13 @@ def granule_inside_area(start_time, end_time, platform_name, instrument,
     acov = mypass.area_coverage(area_def)
     LOG.debug("Granule coverage of area %s: %f", area_def.area_id, acov)
 
-    from pyresample.boundary import AreaDefBoundary
-    from trollsched.drawing import save_fig
-    area_boundary = AreaDefBoundary(area_def, frequency=100)
-    area_boundary = area_boundary.contour_poly
-    save_fig(mypass, poly=area_boundary, directory='/tmp')
+    is_inside = (acov > thr_area_coverage)
 
-    return (acov > thr_area_coverage)
+    if is_inside:
+        from pyresample.boundary import AreaDefBoundary
+        from trollsched.drawing import save_fig
+        area_boundary = AreaDefBoundary(area_def, frequency=100)
+        area_boundary = area_boundary.contour_poly
+        save_fig(mypass, poly=area_boundary, directory='/tmp')
+
+    return

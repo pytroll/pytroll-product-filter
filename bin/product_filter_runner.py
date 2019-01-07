@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2017, 2018 Adam.Dybbroe
+# Copyright (c) 2017, 2018, 2019 Adam.Dybbroe
 
 # Author(s):
 
@@ -131,8 +131,8 @@ def start_product_filtering(registry, message, options, **kwargs):
     instrument = str(message.data['instruments'])
     platform_name = METOPS.get(
         message.data['satellite'], message.data['satellite'])
-    path, fname = os.path.split(urlobj.path)
-    registry[scene_id] = os.path.join(path, fname)
+    source_path, source_fname = os.path.split(urlobj.path)
+    registry[scene_id] = os.path.join(source_path, source_fname)
 
     if granule_ok:
         LOG.info("Granule %s inside one area", str(registry[scene_id]))
@@ -159,7 +159,16 @@ def start_product_filtering(registry, message, options, **kwargs):
             LOG.info("File copied from %s to %s", urlobj.path, local_filepath)
             shutil.copy(local_filepath, sir_filepath)
             LOG.info("File copied from %s to %s", local_filepath, sir_filepath)
-        else:
+
+        if 'destination' in options:
+            dest_filepath = os.path.join(options['destination'], source_fname)
+            if not os.path.exists(urlobj.path):
+                shutil.copy(urlobj.path, dest_filepath)
+                LOG.info("File copied from %s to %s", urlobj.path, dest_filepath)
+            else:
+                LOG.info("File is there (%s) already, don't copy...", source_path)
+
+        if not 'destination' in options and not 'sir_local_dir' in options:
             LOG.info("Don't do anything with this file...")
 
     else:
