@@ -162,11 +162,11 @@ def start_product_filtering(registry, message, options, **kwargs):
 
         if 'destination' in options:
             dest_filepath = os.path.join(options['destination'], source_fname)
-            if not os.path.exists(urlobj.path):
+            if not os.path.exists(dest_filepath):
                 shutil.copy(urlobj.path, dest_filepath)
                 LOG.info("File copied from %s to %s", urlobj.path, dest_filepath)
             else:
-                LOG.info("File is there (%s) already, don't copy...", source_path)
+                LOG.info("File is there (%s) already, don't copy...", os.path.dirname(dest_filepath))
 
         if not 'destination' in options and not 'sir_local_dir' in options:
             LOG.info("Don't do anything with this file...")
