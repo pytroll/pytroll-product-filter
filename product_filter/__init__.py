@@ -180,7 +180,7 @@ class GranuleFilter(object):
             area_boundary = area_boundary.contour_poly
             save_fig(mypass, poly=area_boundary, directory='/tmp')
 
-        return
+        return is_inside
 
 
 def get_config(configfile, service, procenv):
