@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2017 Adam.Dybbroe
+# Copyright (c) 2017, 2018 Adam.Dybbroe
 
 # Author(s):
 
@@ -46,5 +46,5 @@ setup(name="product_filter",
       scripts=['bin/product_filter_runner.py', ],
       data_files=[],
       zip_safe=False,
-      install_requires=['posttroll', 'pyorbital', 'pyresample', ],
+      install_requires=['posttroll', 'pyorbital', 'pyresample', 'trollsched'],
       )
