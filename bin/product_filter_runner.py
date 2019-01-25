@@ -124,7 +124,7 @@ def start_product_filtering(registry, message, options, **kwargs):
 
     # Get yaml config:
     if options['nagios_config_file'] is not None:
-        hook_options = get_config(options['nagios_config_file'], 'ascat_hook', '')
+        hook_options = get_config(options['nagios_config_file'], 'ascat_hook'+str(options['environ']), '')
     else:
         hook_options = {}
 
