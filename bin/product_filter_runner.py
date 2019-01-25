@@ -83,6 +83,11 @@ def get_arguments():
                         dest="environment",
                         type=str,
                         default="unknown")
+    parser.add_argument("--nagios",
+                        help="The nagios/monitoring config file path",
+                        dest="nagios_file",
+                        type=str,
+                        default="")
     parser.add_argument("-v", "--verbose",
                         help="print debug messages too",
                         action="store_true")
@@ -106,7 +111,7 @@ def get_arguments():
         print "Template file given as master config, aborting!"
         sys.exit()
 
-    return environment, service, args.config_file
+    return environment, service, args.config_file, args.nagios_file
 
 
 def start_product_filtering(registry, message, options, **kwargs):
@@ -117,12 +122,11 @@ def start_product_filtering(registry, message, options, **kwargs):
     LOG.info("\tMessage:")
     LOG.info(message)
 
-    area_def_file = os.path.join(AREA_CONFIG_PATH, "areas.def")
-    try:
-        granule_ok = GranuleFilter(options, area_def_file)(message)
-    except (InconsistentMessage, NoValidTles, SceneNotSupported, IOError) as e__:
-        LOG.exception("Could not do the granule filtering...")
-        return registry
+    # Get yaml config:
+    if options['nagios_config_file'] is not None:
+        hook_options = get_config(options['nagios_config_file'], 'ascat_hook', '')
+    else:
+        hook_options = {}
 
     urlobj = urlparse(message.data['uri'])
 
@@ -132,6 +136,18 @@ def start_product_filtering(registry, message, options, **kwargs):
     platform_name = METOPS.get(
         message.data['satellite'], message.data['satellite'])
     source_path, source_fname = os.path.split(urlobj.path)
+
+    area_def_file = os.path.join(AREA_CONFIG_PATH, "areas.def")
+    try:
+        granule_ok = GranuleFilter(options, area_def_file)(message)
+        if instrument in ['ascat'] and 'ascat_hook' in hook_options:
+            hook_options['ascat_hook'](0, "OK")
+    except (InconsistentMessage, NoValidTles, SceneNotSupported, IOError) as e__:
+        LOG.exception("Could not do the granule filtering...")
+        if instrument in ['ascat'] and 'ascat_hook' in hook_options:
+            hook_options['ascat_hook'](2, "ERROR: Could not do the granule filtering...")
+        return registry
+
     registry[scene_id] = os.path.join(source_path, source_fname)
 
     if granule_ok:
@@ -166,6 +182,9 @@ def start_product_filtering(registry, message, options, **kwargs):
                 shutil.copy(urlobj.path, dest_filepath)
                 LOG.info("File copied from %s to %s", urlobj.path, dest_filepath)
             else:
+                if instrument in ['ascat'] and 'ascat_hook' in hook_options:
+                    hook_options['ascat_hook'](
+                        1, "WARNING: File is there (%s) already, don't copy..." % os.path.dirname(dest_filepath))
                 LOG.info("File is there (%s) already, don't copy...", os.path.dirname(dest_filepath))
 
         if not 'destination' in options and not 'sir_local_dir' in options:
@@ -208,9 +227,9 @@ if __name__ == "__main__":
     logging.getLogger('').setLevel(logging.DEBUG)
     logging.getLogger('posttroll').setLevel(logging.INFO)
 
-    (environ, service_name, config_filename) = get_arguments()
+    (environ, service_name, config_filename, nagios_config_file) = get_arguments()
     OPTIONS = get_config(config_filename, service_name, environ)
-
+    OPTIONS['nagios_config_file'] = nagios_config_file
     MAIL_HOST = 'localhost'
     SENDER = OPTIONS.get('mail_sender', 'safusr.u@smhi.se')
     MAIL_FROM = '"Orbital determination error" <' + str(SENDER) + '>'
