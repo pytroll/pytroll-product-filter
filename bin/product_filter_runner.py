@@ -125,9 +125,9 @@ def start_product_filtering(registry, message, options, **kwargs):
     # Get yaml config:
     if options['nagios_config_file'] is not None:
         LOG.debug("Config file - nagios monitoring: %s", options['nagios_config_file'])
-        LOG.debug("Environment: %s", options['environ'])
+        LOG.debug("Environment: %s", options['environment'])
         hook_options = get_config(options['nagios_config_file'],
-                                  'ascat_hook'+str(options['environ']), '')
+                                  'ascat_hook'+str(options['environment']), '')
     else:
         hook_options = {}
 
@@ -232,6 +232,7 @@ if __name__ == "__main__":
 
     (environ, service_name, config_filename, nagios_config_file) = get_arguments()
     OPTIONS = get_config(config_filename, service_name, environ)
+    OPTIONS['environment'] = environ
     OPTIONS['nagios_config_file'] = nagios_config_file
     MAIL_HOST = 'localhost'
     SENDER = OPTIONS.get('mail_sender', 'safusr.u@smhi.se')
