@@ -257,5 +257,6 @@ if __name__ == "__main__":
     logging.getLogger('').addHandler(smtp_handler)
 
     LOG = logging.getLogger('product_filter_runner')
+    LOG.debug("Mail to: %s", str(MAIL_TO))
 
     product_filter_live_runner(OPTIONS)
