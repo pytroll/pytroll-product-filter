@@ -126,8 +126,9 @@ def start_product_filtering(registry, message, options, **kwargs):
     if options['nagios_config_file'] is not None:
         LOG.debug("Config file - nagios monitoring: %s", options['nagios_config_file'])
         LOG.debug("Environment: %s", options['environment'])
-        hook_options = get_config(options['nagios_config_file'],
-                                  'ascat_hook'+str(options['environment']), '')
+        section = 'ascat_hook'+str(options['environment'])
+        LOG-debug('Section = %s', section)
+        hook_options = get_config(options['nagios_config_file'], section, '')
     else:
         hook_options = {}
 
