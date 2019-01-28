@@ -87,7 +87,7 @@ def get_arguments():
                         help="The nagios/monitoring config file path",
                         dest="nagios_file",
                         type=str,
-                        default="")
+                        default=None)
     parser.add_argument("-v", "--verbose",
                         help="print debug messages too",
                         action="store_true")
@@ -149,11 +149,11 @@ def start_product_filtering(registry, message, options, **kwargs):
         granule_ok = GranuleFilter(options, area_def_file)(message)
         if instrument in ['ascat'] and 'ascat_hook' in hook_options:
             LOG.debug("Call to the ascat-hook...")
-            hook_options['ascat_hook'](0, "OK")
+            hook_options['ascat_hook']("0", "OK")
     except (InconsistentMessage, NoValidTles, SceneNotSupported, IOError) as e__:
         LOG.exception("Could not do the granule filtering...")
         if instrument in ['ascat'] and 'ascat_hook' in hook_options:
-            hook_options['ascat_hook'](2, "ERROR: Could not do the granule filtering...")
+            hook_options['ascat_hook']("2", "ERROR: Could not do the granule filtering...")
         return registry
 
     registry[scene_id] = os.path.join(source_path, source_fname)
@@ -192,7 +192,7 @@ def start_product_filtering(registry, message, options, **kwargs):
             else:
                 if instrument in ['ascat'] and 'ascat_hook' in hook_options:
                     hook_options['ascat_hook'](
-                        1, "WARNING: File is there (%s) already, don't copy..." % os.path.dirname(dest_filepath))
+                        "1", "WARNING: File is there (%s) already, don't copy..." % os.path.dirname(dest_filepath))
                 LOG.info("File is there (%s) already, don't copy...", os.path.dirname(dest_filepath))
 
         if not 'destination' in options and not 'sir_local_dir' in options:
@@ -239,6 +239,10 @@ if __name__ == "__main__":
     OPTIONS = get_config(config_filename, service_name, environ)
     OPTIONS['environment'] = environ
     OPTIONS['nagios_config_file'] = nagios_config_file
+
+    import pdb
+    pdb.set_trace()
+
     MAIL_HOST = 'localhost'
     SENDER = OPTIONS.get('mail_sender', 'safusr.u@smhi.se')
     MAIL_FROM = '"Orbital determination error" <' + str(SENDER) + '>'
