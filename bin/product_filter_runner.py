@@ -240,9 +240,6 @@ if __name__ == "__main__":
     OPTIONS['environment'] = environ
     OPTIONS['nagios_config_file'] = nagios_config_file
 
-    import pdb
-    pdb.set_trace()
-
     MAIL_HOST = 'localhost'
     SENDER = OPTIONS.get('mail_sender', 'safusr.u@smhi.se')
     MAIL_FROM = '"Orbital determination error" <' + str(SENDER) + '>'
