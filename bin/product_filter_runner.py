@@ -131,6 +131,7 @@ def start_product_filtering(registry, message, options, **kwargs):
     else:
         hook_options = {}
 
+    LOG.debug("Monitoring hook options: ", str(hook_options))
     urlobj = urlparse(message.data['uri'])
 
     start_time = message.data['start_time']
@@ -144,6 +145,7 @@ def start_product_filtering(registry, message, options, **kwargs):
     try:
         granule_ok = GranuleFilter(options, area_def_file)(message)
         if instrument in ['ascat'] and 'ascat_hook' in hook_options:
+            LOG.debug("Call to the ascat-hook...")
             hook_options['ascat_hook'](0, "OK")
     except (InconsistentMessage, NoValidTles, SceneNotSupported, IOError) as e__:
         LOG.exception("Could not do the granule filtering...")
