@@ -131,7 +131,9 @@ def start_product_filtering(registry, message, options, **kwargs):
     else:
         hook_options = {}
 
-    LOG.debug("Monitoring hook options: ", str(hook_options))
+    for key in hook_options:
+        LOG.debug("Monitoring hook options: %s %s", key, str(hook_options[key]))
+
     urlobj = urlparse(message.data['uri'])
 
     start_time = message.data['start_time']
