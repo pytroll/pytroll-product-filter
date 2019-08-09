@@ -239,3 +239,7 @@ def granule_inside_area(start_time, end_time, platform_name, instrument,
         save_fig(mypass, poly=area_boundary, directory='/tmp')
 
     return
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions

@@ -25,12 +25,12 @@
 
 from setuptools import setup
 import imp
+import versioneer
 
-version = imp.load_source(
-    'product_filter.version', 'product_filter/version.py')
 
-setup(name="product_filter",
-      version=version.__version__,
+setup(name='product_filter',
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(),
       description='Pytroll runner for the product-filter',
       author='Adam Dybroe',
       author_email='adam.dybroe@smhi.se',

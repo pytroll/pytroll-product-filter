@@ -1,0 +1,2 @@
+include versioneer.py
+include product_filter/version.py
