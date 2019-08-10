@@ -34,7 +34,7 @@ from pyresample import utils as pr_utils
 from glob import glob
 import logging
 
-from ._version import get_versions
+from .version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
