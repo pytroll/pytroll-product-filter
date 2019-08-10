@@ -32,8 +32,12 @@ from trollsched.satpass import Pass
 from trollsift.parser import globify, Parser
 from pyresample import utils as pr_utils
 from glob import glob
-
 import logging
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
+
 LOG = logging.getLogger(__name__)
 
 METOPS = {'METOPA': 'Metop-A',
@@ -104,7 +108,7 @@ class GranuleFilter(object):
             #LOG.error("File %s does not exist. Don't do anything...", filepath)
             raise IOError("File %s does not exist. Don't do anything...", filepath)
 
-        LOG.info("Sat and Instrument: " + platform_name + " " + instrument)
+        LOG.info("Sat and Instrument: %s %s", platform_name, instrument)
 
         if not isinstance(self.tle_dirs, list):
             tle_dirs = [self.tle_dirs]
@@ -239,7 +243,3 @@ def granule_inside_area(start_time, end_time, platform_name, instrument,
         save_fig(mypass, poly=area_boundary, directory='/tmp')
 
     return
-
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
