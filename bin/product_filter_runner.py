@@ -26,8 +26,8 @@
 import sys
 import os
 import shutil
-from urlparse import urlparse
-import posttroll.subscriber
+from six.moves.urllib.parse import urlparse
+from posttroll.subscriber import Subscribe
 from posttroll.publisher import Publish
 from product_filter import (get_config,
                             GranuleFilter)
@@ -209,7 +209,7 @@ def product_filter_live_runner(options):
 
     LOG.info("*** Start the (EUMETCast) Product-filter runner:")
     LOG.debug("Listens for messages of type: %s", str(options['message_types']))
-    with posttroll.subscriber.Subscribe('', options['message_types'], True) as subscr:
+    with Subscribe('', options['message_types'], True) as subscr:
         with Publish('product_filter_runner', 0) as publisher:
             file_reg = {}
             for msg in subscr.recv():

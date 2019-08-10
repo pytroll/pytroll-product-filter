@@ -25,7 +25,7 @@
 
 import os
 import yaml
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 from pyorbital.orbital import Orbital
 from datetime import timedelta, datetime
 from trollsched.satpass import Pass
