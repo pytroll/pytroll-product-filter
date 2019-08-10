@@ -98,14 +98,14 @@ def get_arguments():
         print("Configuration file required! product_filter_runner.py <file>")
         sys.exit()
     if args.environment == '':
-        print(")Environment required! Use command-line switch -s <service name>")
+        print("Environment required! Use command-line switch -s <service name>")
         sys.exit()
     if args.service == '':
-        print("Service required! Use command-line switch -e <environment>"
+        print("Service required! Use command-line switch -e <environment>")
         sys.exit()
 
-    service=args.service.lower()
-    environment=args.environment.lower()
+    service = args.service.lower()
+    environment = args.environment.lower()
 
     if 'template' in args.config_file:
         print("Template file given as master config, aborting!")
@@ -126,27 +126,27 @@ def start_product_filtering(registry, message, options, **kwargs):
     if options['nagios_config_file'] is not None:
         LOG.debug("Config file - nagios monitoring: %s", options['nagios_config_file'])
         LOG.debug("Environment: %s", options['environment'])
-        section='ascat_hook-'+str(options['environment'])
+        section = 'ascat_hook-'+str(options['environment'])
         LOG.debug('Section = %s', section)
-        hook_options=get_config(options['nagios_config_file'], section, '')
+        hook_options = get_config(options['nagios_config_file'], section, '')
     else:
-        hook_options={}
+        hook_options = {}
 
     for key in hook_options:
         LOG.debug("Monitoring hook options: %s %s", key, str(hook_options[key]))
 
-    urlobj=urlparse(message.data['uri'])
+    urlobj = urlparse(message.data['uri'])
 
-    start_time=message.data['start_time']
-    scene_id=start_time.strftime('%Y%m%d%H%M')
-    instrument=str(message.data['instruments'])
-    platform_name=METOPS.get(
+    start_time = message.data['start_time']
+    scene_id = start_time.strftime('%Y%m%d%H%M')
+    instrument = str(message.data['instruments'])
+    platform_name = METOPS.get(
         message.data['satellite'], message.data['satellite'])
-    source_path, source_fname=os.path.split(urlobj.path)
+    source_path, source_fname = os.path.split(urlobj.path)
 
-    area_def_file=os.path.join(AREA_CONFIG_PATH, "areas.def")
+    area_def_file = os.path.join(AREA_CONFIG_PATH, "areas.def")
     try:
-        granule_ok=GranuleFilter(options, area_def_file)(message)
+        granule_ok = GranuleFilter(options, area_def_file)(message)
         if instrument in ['ascat'] and 'ascat_hook' in hook_options:
             LOG.debug("Call to the ascat-hook...")
             hook_options['ascat_hook'](0, "OK: Checking granule done successfully")
@@ -156,36 +156,36 @@ def start_product_filtering(registry, message, options, **kwargs):
             hook_options['ascat_hook'](2, "ERROR: Could not do the granule filtering...")
         return registry
 
-    registry[scene_id]=os.path.join(source_path, source_fname)
+    registry[scene_id] = os.path.join(source_path, source_fname)
 
     if granule_ok:
         LOG.info("Granule %s inside one area", str(registry[scene_id]))
-        mletter=METOP_LETTER.get(platform_name)
+        mletter = METOP_LETTER.get(platform_name)
 
         # Now do the copying of the file to disk changing the filename!
         if instrument in ['iasi']:
             # Example: iasi_b__twt_l2p_1706211005.bin
-            filename='iasi_{0}__twt_l2p_{1}.bin'.format(mletter,
+            filename = 'iasi_{0}__twt_l2p_{1}.bin'.format(mletter,
                                                           start_time.strftime('%y%m%d%H%M'))
         elif instrument in ['ascat']:
             # Examples:
             # ascat_b_ears250_1706211008.bin
             # ascat_a_earscoa_1706211058.bin
-            product_name=str(message.data['product'])[0:3]
-            filename='ascat_{0}_ears{1}_{2}.bin'.format(mletter,
+            product_name = str(message.data['product'])[0:3]
+            filename = 'ascat_{0}_ears{1}_{2}.bin'.format(mletter,
                                                           product_name,
                                                           start_time.strftime('%y%m%d%H%M'))
 
         if 'sir_local_dir' in options:
-            local_filepath=os.path.join(options['sir_local_dir'], filename)
-            sir_filepath=os.path.join(options['sir_dir'], filename + '_original')
+            local_filepath = os.path.join(options['sir_local_dir'], filename)
+            sir_filepath = os.path.join(options['sir_dir'], filename + '_original')
             shutil.copy(urlobj.path, local_filepath)
             LOG.info("File copied from %s to %s", urlobj.path, local_filepath)
             shutil.copy(local_filepath, sir_filepath)
             LOG.info("File copied from %s to %s", local_filepath, sir_filepath)
 
         if 'destination' in options:
-            dest_filepath=os.path.join(options['destination'], source_fname)
+            dest_filepath = os.path.join(options['destination'], source_fname)
             if not os.path.exists(dest_filepath):
                 shutil.copy(urlobj.path, dest_filepath)
                 LOG.info("File copied from %s to %s", urlobj.path, dest_filepath)
@@ -211,12 +211,12 @@ def product_filter_live_runner(options):
     LOG.debug("Listens for messages of type: %s", str(options['message_types']))
     with posttroll.subscriber.Subscribe('', options['message_types'], True) as subscr:
         with Publish('product_filter_runner', 0) as publisher:
-            file_reg={}
+            file_reg = {}
             for msg in subscr.recv():
-                file_reg=start_product_filtering(
+                file_reg = start_product_filtering(
                     file_reg, msg, options, publisher=publisher)
                 # Cleanup in file registry (keep only the last 5):
-                keys=file_reg.keys()
+                keys = file_reg.keys()
                 if len(keys) > 5:
                     keys.sort()
                     file_reg.pop(keys[0])
@@ -224,10 +224,10 @@ def product_filter_live_runner(options):
 
 if __name__ == "__main__":
     from logging import handlers
-    handler=logging.StreamHandler(sys.stderr)
+    handler = logging.StreamHandler(sys.stderr)
 
     handler.setLevel(logging.DEBUG)
-    formatter=logging.Formatter(fmt=_DEFAULT_LOG_FORMAT,
+    formatter = logging.Formatter(fmt=_DEFAULT_LOG_FORMAT,
                                   datefmt=_DEFAULT_TIME_FORMAT)
 
     handler.setFormatter(formatter)
@@ -235,29 +235,29 @@ if __name__ == "__main__":
     logging.getLogger('').setLevel(logging.DEBUG)
     logging.getLogger('posttroll').setLevel(logging.INFO)
 
-    (environ, service_name, config_filename, nagios_config_file)=get_arguments()
-    OPTIONS=get_config(config_filename, service_name, environ)
-    OPTIONS['environment']=environ
-    OPTIONS['nagios_config_file']=nagios_config_file
+    (environ, service_name, config_filename, nagios_config_file) = get_arguments()
+    OPTIONS = get_config(config_filename, service_name, environ)
+    OPTIONS['environment'] = environ
+    OPTIONS['nagios_config_file'] = nagios_config_file
 
-    MAIL_HOST='localhost'
-    SENDER=OPTIONS.get('mail_sender', 'safusr.u@smhi.se')
-    MAIL_FROM='"Orbital determination error" <' + str(SENDER) + '>'
+    MAIL_HOST = 'localhost'
+    SENDER = OPTIONS.get('mail_sender', 'safusr.u@smhi.se')
+    MAIL_FROM = '"Orbital determination error" <' + str(SENDER) + '>'
     try:
-        RECIPIENTS=OPTIONS.get("mail_subscribers").split()
+        RECIPIENTS = OPTIONS.get("mail_subscribers").split()
     except AttributeError:
-        RECIPIENTS="adam.dybbroe@smhi.se"
-    MAIL_TO=RECIPIENTS
-    MAIL_SUBJECT='New Critical Event From product_filtering'
+        RECIPIENTS = "adam.dybbroe@smhi.se"
+    MAIL_TO = RECIPIENTS
+    MAIL_SUBJECT = 'New Critical Event From product_filtering'
 
-    smtp_handler=handlers.SMTPHandler(MAIL_HOST,
+    smtp_handler = handlers.SMTPHandler(MAIL_HOST,
                                         MAIL_FROM,
                                         MAIL_TO,
                                         MAIL_SUBJECT)
     smtp_handler.setLevel(logging.CRITICAL)
     logging.getLogger('').addHandler(smtp_handler)
 
-    LOG=logging.getLogger('product_filter_runner')
+    LOG = logging.getLogger('product_filter_runner')
     LOG.debug("Mail to: %s", str(MAIL_TO))
 
     product_filter_live_runner(OPTIONS)
