@@ -151,7 +151,7 @@ def start_product_filtering(registry, message, options, **kwargs):
             LOG.debug("Call to the ascat-hook...")
             hook_options['ascat_hook'](0, "OK: Checking granule done successfully")
     except (InconsistentMessage, NoValidTles, SceneNotSupported, IOError) as e__:
-        LOG.exception("Could not do the granule filtering...")
+        LOG.exception("Could not do the granule filtering: %s", e__)
         if instrument in ['ascat'] and 'ascat_hook' in hook_options:
             hook_options['ascat_hook'](2, "ERROR: Could not do the granule filtering...")
         return registry
