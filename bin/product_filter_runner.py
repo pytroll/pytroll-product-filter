@@ -144,7 +144,8 @@ def start_product_filtering(registry, message, options, **kwargs):
         message.data['satellite'], message.data['satellite'])
     source_path, source_fname = os.path.split(urlobj.path)
 
-    area_def_file = os.path.join(AREA_CONFIG_PATH, "areas.def")
+    area_def_file = os.path.join(AREA_CONFIG_PATH, "areas.yaml")
+    LOG.debug("Area config file path: %s", area_def_file)
     try:
         granule_ok = GranuleFilter(options, area_def_file)(message)
         if instrument in ['ascat'] and 'ascat_hook' in hook_options:
