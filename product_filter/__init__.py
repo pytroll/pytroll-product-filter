@@ -25,12 +25,17 @@
 
 import os
 import yaml
+try:
+    from yaml import UnsafeLoader
+except ImportError:
+    from yaml import Loader as UnsafeLoader
+
 from six.moves.urllib.parse import urlparse
 from pyorbital.orbital import Orbital
 from datetime import timedelta, datetime
 from trollsched.satpass import Pass
 from trollsift.parser import globify, Parser
-from pyresample import utils as pr_utils
+from pyresample import load_area
 from glob import glob
 import logging
 
@@ -139,8 +144,9 @@ class GranuleFilter(object):
         if not isinstance(self.areaids, list):
             self.areaids = [self.areaids]
         inside = False
+
         for areaid in self.areaids:
-            area_def = pr_utils.load_area(self.area_def_file, areaid)
+            area_def = load_area(self.area_def_file, areaid)
             inside = self.granule_inside_area(start_time, end_time,
                                               platform_name,
                                               area_def,
@@ -191,7 +197,7 @@ def get_config(configfile, service, procenv):
     """Get the configuration from file"""
 
     with open(configfile, 'r') as fp_:
-        config = yaml.load(fp_)
+        config = yaml.load(fp_, Loader=UnsafeLoader)
 
     options = {}
     for item in config:
