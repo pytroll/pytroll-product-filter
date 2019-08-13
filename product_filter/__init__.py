@@ -193,7 +193,7 @@ class GranuleFilter(object):
         return is_inside
 
 
-def get_config(configfile, service, procenv):
+def get_config(configfile, service):
     """Get the configuration from file"""
 
     with open(configfile, 'r') as fp_:
@@ -207,9 +207,6 @@ def get_config(configfile, service, procenv):
             for key in config[service]:
                 if not isinstance(config[service][key], dict):
                     options[key] = config[service][key]
-                elif key in [procenv]:
-                    for memb in config[service][key]:
-                        options[memb] = config[service][key][memb]
 
     return options
 

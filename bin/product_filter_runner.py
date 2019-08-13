@@ -32,8 +32,9 @@ from posttroll.publisher import Publish
 from product_filter import (get_config,
                             GranuleFilter)
 from product_filter import (InconsistentMessage, NoValidTles, SceneNotSupported)
-
 import logging
+from logging import handlers
+
 LOG = logging.getLogger(__name__)
 
 
@@ -70,19 +71,19 @@ def get_arguments():
     parser.add_argument('-c', '--config_file',
                         type=str,
                         dest='config_file',
-                        default='',
+                        required=True,
                         help="The file containing " +
                         "configuration parameters e.g. product_filter_config.yaml")
     parser.add_argument("-s", "--service",
                         help="Name of the service (e.g. iasi-lvl2)",
                         dest="service",
                         type=str,
-                        default="unknown")
-    parser.add_argument("-e", "--environment",
-                        help="The processing environment (utv/test/prod)",
-                        dest="environment",
+                        required=True)
+    parser.add_argument("-l", "--logging",
+                        help="The path to the log-configuration file (e.g. './logging.ini')",
+                        dest="logging_conf_file",
                         type=str,
-                        default="unknown")
+                        required=False)
     parser.add_argument("--nagios",
                         help="The nagios/monitoring config file path",
                         dest="nagios_file",
@@ -94,24 +95,13 @@ def get_arguments():
 
     args = parser.parse_args()
 
-    if args.config_file == '':
-        print("Configuration file required! product_filter_runner.py <file>")
-        sys.exit()
-    if args.environment == '':
-        print("Environment required! Use command-line switch -s <service name>")
-        sys.exit()
-    if args.service == '':
-        print("Service required! Use command-line switch -e <environment>")
-        sys.exit()
-
     service = args.service.lower()
-    environment = args.environment.lower()
 
     if 'template' in args.config_file:
         print("Template file given as master config, aborting!")
         sys.exit()
 
-    return environment, service, args.config_file, args.nagios_file
+    return args.logging_conf_file, service, args.config_file, args.nagios_file
 
 
 def start_product_filtering(registry, message, options, **kwargs):
@@ -125,8 +115,9 @@ def start_product_filtering(registry, message, options, **kwargs):
     # Get yaml config:
     if options['nagios_config_file'] is not None:
         LOG.debug("Config file - nagios monitoring: %s", options['nagios_config_file'])
-        LOG.debug("Environment: %s", options['environment'])
-        section = 'ascat_hook-'+str(options['environment'])
+        # LOG.debug("Environment: %s", options['environment'])
+        # section = 'ascat_hook-'+str(options['environment'])
+        section = 'ascat_hook-utv'
         LOG.debug('Section = %s', section)
         hook_options = get_config(options['nagios_config_file'], section, '')
     else:
@@ -224,7 +215,12 @@ def product_filter_live_runner(options):
 
 
 if __name__ == "__main__":
-    from logging import handlers
+
+    (logfile, service_name, config_filename, nagios_config_file) = get_arguments()
+
+    if logfile:
+        logging.config.fileConfig(logfile)
+
     handler = logging.StreamHandler(sys.stderr)
 
     handler.setLevel(logging.DEBUG)
@@ -236,29 +232,15 @@ if __name__ == "__main__":
     logging.getLogger('').setLevel(logging.DEBUG)
     logging.getLogger('posttroll').setLevel(logging.INFO)
 
-    (environ, service_name, config_filename, nagios_config_file) = get_arguments()
-    OPTIONS = get_config(config_filename, service_name, environ)
-    OPTIONS['environment'] = environ
+    OPTIONS = get_config(config_filename, service_name)
+
     OPTIONS['nagios_config_file'] = nagios_config_file
 
-    MAIL_HOST = 'localhost'
-    SENDER = OPTIONS.get('mail_sender', 'safusr.u@smhi.se')
-    MAIL_FROM = '"Orbital determination error" <' + str(SENDER) + '>'
-    try:
-        RECIPIENTS = OPTIONS.get("mail_subscribers").split()
-    except AttributeError:
-        RECIPIENTS = "adam.dybbroe@smhi.se"
-    MAIL_TO = RECIPIENTS
-    MAIL_SUBJECT = 'New Critical Event From product_filtering'
-
-    smtp_handler = handlers.SMTPHandler(MAIL_HOST,
-                                        MAIL_FROM,
-                                        MAIL_TO,
-                                        MAIL_SUBJECT)
-    smtp_handler.setLevel(logging.CRITICAL)
-    logging.getLogger('').addHandler(smtp_handler)
-
     LOG = logging.getLogger('product_filter_runner')
-    LOG.debug("Mail to: %s", str(MAIL_TO))
+
+    log_handlers = logging.getLogger('').handlers
+    for log_handle in log_handlers:
+        if type(log_handle) is handlers.SMTPHandler:
+            LOG.debug("Mail notifications to: %s", str(log_handle.toaddrs))
 
     product_filter_live_runner(OPTIONS)
