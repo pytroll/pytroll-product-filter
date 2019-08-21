@@ -112,12 +112,15 @@ def start_product_filtering(registry, message, options, **kwargs):
     LOG.info("\tMessage:")
     LOG.info(message)
 
+    # Determine the instrument name:
+    instrument_name = message.data.get('instrument', message.data.get('instruments'))
+
     # Get yaml config:
-    if options['nagios_config_file'] is not None:
+    if options['nagios_config_file'] is not None and instrument_name:
         LOG.debug("Config file - nagios monitoring: %s", options['nagios_config_file'])
         # LOG.debug("Environment: %s", options['environment'])
         # section = 'ascat_hook-'+str(options['environment'])
-        section = 'ascat_hook'
+        section = '%s_hook' % instrument_name
         LOG.debug('Section = %s', section)
         hook_options = get_config(options['nagios_config_file'], section)
     else:
@@ -139,13 +142,20 @@ def start_product_filtering(registry, message, options, **kwargs):
     LOG.debug("Area config file path: %s", area_def_file)
     try:
         granule_ok = GranuleFilter(options, area_def_file)(message)
-        if instrument in ['ascat'] and 'ascat_hook' in hook_options:
-            LOG.debug("Call to the ascat-hook...")
-            hook_options['ascat_hook'](0, "OK: Checking granule done successfully")
+        status_message = "OK: Checking granule done successfully"
+        status_code = 0
+        if section in hook_options:
+            LOG.debug("Call to the %s...", section)
+            hook_options[section](status_code, status_message)
     except (InconsistentMessage, NoValidTles, SceneNotSupported, IOError) as e__:
         LOG.exception("Could not do the granule filtering: %s", e__)
-        if instrument in ['ascat'] and 'ascat_hook' in hook_options:
-            hook_options['ascat_hook'](2, "ERROR: Could not do the granule filtering...")
+        status_code = 2
+        status_message = "ERROR: Could not do the granule filtering..."
+
+    if section in hook_options:
+        hook_options[section](status_code, status_message)
+
+    if status_code == 2:
         return registry
 
     registry[scene_id] = os.path.join(source_path, source_fname)
@@ -182,9 +192,10 @@ def start_product_filtering(registry, message, options, **kwargs):
                 shutil.copy(urlobj.path, dest_filepath)
                 LOG.info("File copied from %s to %s", urlobj.path, dest_filepath)
             else:
-                if instrument in ['ascat'] and 'ascat_hook' in hook_options:
-                    hook_options['ascat_hook'](
+                if section in hook_options:
+                    hook_options[section](
                         1, "WARNING: File is there (%s) already, don't copy..." % os.path.dirname(dest_filepath))
+
                 LOG.info("File is there (%s) already, don't copy...", os.path.dirname(dest_filepath))
 
         if not 'destination' in options and not 'sir_local_dir' in options:
