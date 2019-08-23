@@ -144,15 +144,13 @@ def start_product_filtering(registry, message, options, **kwargs):
         granule_ok = GranuleFilter(options, area_def_file)(message)
         status_message = "OK: Checking granule done successfully"
         status_code = 0
-        if section in hook_options:
-            LOG.debug("Call to the %s...", section)
-            hook_options[section](status_code, status_message)
     except (InconsistentMessage, NoValidTles, SceneNotSupported, IOError) as e__:
         LOG.exception("Could not do the granule filtering: %s", e__)
         status_code = 2
         status_message = "ERROR: Could not do the granule filtering..."
 
     if section in hook_options:
+        LOG.debug("Call to the %s...", section)
         hook_options[section](status_code, status_message)
 
     if status_code == 2:
