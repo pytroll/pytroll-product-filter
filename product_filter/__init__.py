@@ -25,15 +25,24 @@
 
 import os
 import yaml
-from urlparse import urlparse
+try:
+    from yaml import UnsafeLoader
+except ImportError:
+    from yaml import Loader as UnsafeLoader
+
+from six.moves.urllib.parse import urlparse
 from pyorbital.orbital import Orbital
 from datetime import timedelta, datetime
 from trollsched.satpass import Pass
 from trollsift.parser import globify, Parser
-from pyresample import utils as pr_utils
+from pyresample import load_area
 from glob import glob
-
 import logging
+
+from .version import get_versions
+__version__ = get_versions()['version']
+del get_versions
+
 LOG = logging.getLogger(__name__)
 
 METOPS = {'METOPA': 'Metop-A',
@@ -104,7 +113,7 @@ class GranuleFilter(object):
             #LOG.error("File %s does not exist. Don't do anything...", filepath)
             raise IOError("File %s does not exist. Don't do anything...", filepath)
 
-        LOG.info("Sat and Instrument: " + platform_name + " " + instrument)
+        LOG.info("Sat and Instrument: %s %s", platform_name, instrument)
 
         if not isinstance(self.tle_dirs, list):
             tle_dirs = [self.tle_dirs]
@@ -135,8 +144,9 @@ class GranuleFilter(object):
         if not isinstance(self.areaids, list):
             self.areaids = [self.areaids]
         inside = False
+
         for areaid in self.areaids:
-            area_def = pr_utils.load_area(self.area_def_file, areaid)
+            area_def = load_area(self.area_def_file, areaid)
             inside = self.granule_inside_area(start_time, end_time,
                                               platform_name,
                                               area_def,
@@ -183,11 +193,11 @@ class GranuleFilter(object):
         return is_inside
 
 
-def get_config(configfile, service, procenv):
+def get_config(configfile, service):
     """Get the configuration from file"""
 
     with open(configfile, 'r') as fp_:
-        config = yaml.load(fp_)
+        config = yaml.load(fp_, Loader=UnsafeLoader)
 
     options = {}
     for item in config:
@@ -197,9 +207,6 @@ def get_config(configfile, service, procenv):
             for key in config[service]:
                 if not isinstance(config[service][key], dict):
                     options[key] = config[service][key]
-                elif key in [procenv]:
-                    for memb in config[service][key]:
-                        options[memb] = config[service][key][memb]
 
     return options
 
