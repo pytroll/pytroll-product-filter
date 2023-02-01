@@ -1,6 +1,6 @@
 [tool.poetry]
     name = "product_filter"
-    version = "0.0.0"
+    version = "0.0.0" # This is just a placeholder for poetry_dynamic_versioning
     description = "Pytroll runner for the product-filter"
     classifiers = [
         "Development Status :: 3 - Alpha",
@@ -39,6 +39,7 @@
 [tool.poetry.dev-dependencies]
     black = "^23.1.0"
     isort = "^5.12.0"
+    pip = "^23.0"
     poetry-dynamic-versioning = "^0.21.3"
 
 [tool.black]

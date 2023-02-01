@@ -33,7 +33,6 @@ from pyresample import load_area
 from trollsched.satpass import Pass
 from trollsift.parser import Parser, globify
 
-
 LOG = logging.getLogger(__name__)
 
 METOPS = {

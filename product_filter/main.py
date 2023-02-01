@@ -6,9 +6,9 @@ from logging import handlers
 
 from product_filter.definitions import get_config
 from product_filter.product_filter_runner import (
-    get_arguments,
     _DEFAULT_LOG_FORMAT,
     _DEFAULT_TIME_FORMAT,
+    get_arguments,
     product_filter_live_runner,
 )
 
