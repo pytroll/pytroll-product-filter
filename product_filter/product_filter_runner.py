@@ -26,24 +26,22 @@ import logging
 import os
 import shutil
 import sys
-from logging import handlers
 from urllib.parse import urlparse
 
 from posttroll.publisher import Publish
 from posttroll.subscriber import Subscribe
 
-from product_filter import (
+from .definitions import (
     GranuleFilter,
     InconsistentMessage,
     NoValidTles,
     SceneNotSupported,
-    get_config,
 )
 
 LOG = logging.getLogger(__name__)
 
 
-AREA_CONFIG_PATH = os.environ.get("PYTROLL_CONFIG_DIR", "./")
+AREA_CONFIG_PATH = os.environ.get("PYTROLL_CONFIG_DIR", "../bin/")
 
 _DEFAULT_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 _DEFAULT_LOG_FORMAT = "[%(levelname)s: %(asctime)s : %(name)s] %(message)s"
@@ -60,8 +58,11 @@ METOPS = {
 METOP_LETTER = {"Metop-A": "a", "Metop-B": "b", "Metop-C": "c"}
 
 
-def get_arguments():
+def get_arguments(argv=None):
     """Return parsed command line arguments."""
+
+    if argv is None:
+        argv = sys.argv[1:]
 
     def validate_config_file_name(config_file_name):
         config_file_name = str(config_file_name)
@@ -99,7 +100,7 @@ def get_arguments():
         "-v", "--verbose", help="print debug messages too", action="store_true"
     )
 
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def start_product_filtering(registry, message, options, **kwargs):
@@ -197,26 +198,3 @@ def product_filter_live_runner(options):
                 if len(keys) > 5:
                     keys.sort()
                     file_reg.pop(keys[0])
-
-
-if __name__ == "__main__":
-
-    args = get_arguments()
-
-    if args.logging_conf_file:
-        logging.config.fileConfig(args.logging_conf_file)
-    handler = logging.StreamHandler(sys.stderr)
-    handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(fmt=_DEFAULT_LOG_FORMAT, datefmt=_DEFAULT_TIME_FORMAT)
-    handler.setFormatter(formatter)
-    logging.getLogger("").addHandler(handler)
-    logging.getLogger("").setLevel(logging.DEBUG)
-    logging.getLogger("posttroll").setLevel(logging.INFO)
-    LOG = logging.getLogger("product_filter_runner")
-    log_handlers = logging.getLogger("").handlers
-    for log_handle in log_handlers:
-        if type(log_handle) is handlers.SMTPHandler:
-            LOG.debug("Mail notifications to: %s", str(log_handle.toaddrs))
-
-    OPTIONS = get_config(args.config_file, args.service)
-    product_filter_live_runner(OPTIONS)
