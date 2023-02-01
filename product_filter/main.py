@@ -5,12 +5,9 @@ import sys
 from logging import handlers
 
 from .argparse_wrapper import get_arguments
+from .constants import _DEFAULT_LOG_FORMAT, _DEFAULT_TIME_FORMAT
 from .definitions import get_config
-from .product_filter_runner import (
-    _DEFAULT_LOG_FORMAT,
-    _DEFAULT_TIME_FORMAT,
-    product_filter_live_runner,
-)
+from .product_filter_runner import product_filter_live_runner
 
 
 def main(argv=None):

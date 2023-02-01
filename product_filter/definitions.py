@@ -33,16 +33,9 @@ from pyresample import load_area
 from trollsched.satpass import Pass
 from trollsift.parser import Parser, globify
 
-LOG = logging.getLogger(__name__)
+from product_filter.constants import METOPS
 
-METOPS = {
-    "METOPA": "Metop-A",
-    "metopa": "Metop-A",
-    "METOPB": "Metop-B",
-    "metopb": "Metop-B",
-    "metopc": "Metop-C",
-    "METOPC": "Metop-C",
-}
+LOG = logging.getLogger(__name__)
 
 
 class InconsistentMessage(Exception):
