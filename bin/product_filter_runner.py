@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2017, 2018, 2019 Adam.Dybbroe
@@ -20,51 +20,48 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Posttroll runner for the product-filtering
-"""
-
-import sys
+"""Posttroll runner for the product-filtering"""
+import argparse
+import logging
 import os
 import shutil
-from six.moves.urllib.parse import urlparse
-from posttroll.subscriber import Subscribe
-from posttroll.publisher import Publish
-from product_filter import (get_config,
-                            GranuleFilter)
-from product_filter import (InconsistentMessage, NoValidTles, SceneNotSupported)
-import logging
+import sys
 from logging import handlers
+from urllib.parse import urlparse
+
+from posttroll.publisher import Publish
+from posttroll.subscriber import Subscribe
+
+from product_filter import (
+    GranuleFilter,
+    InconsistentMessage,
+    NoValidTles,
+    SceneNotSupported,
+    get_config,
+)
 
 LOG = logging.getLogger(__name__)
 
 
-AREA_CONFIG_PATH = os.environ.get('PYTROLL_CONFIG_DIR', './')
+AREA_CONFIG_PATH = os.environ.get("PYTROLL_CONFIG_DIR", "./")
 
-#: Default time format
-_DEFAULT_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+_DEFAULT_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+_DEFAULT_LOG_FORMAT = "[%(levelname)s: %(asctime)s : %(name)s] %(message)s"
 
-#: Default log format
-_DEFAULT_LOG_FORMAT = '[%(levelname)s: %(asctime)s : %(name)s] %(message)s'
+METOPS = {
+    "METOPA": "Metop-A",
+    "metopa": "Metop-A",
+    "METOPB": "Metop-B",
+    "metopb": "Metop-B",
+    "metopc": "Metop-C",
+    "METOPC": "Metop-C",
+}
 
-METOPS = {'METOPA': 'Metop-A',
-          'metopa': 'Metop-A',
-          'METOPB': 'Metop-B',
-          'metopb': 'Metop-B',
-          'metopc': 'Metop-C',
-          'METOPC': 'Metop-C'}
-
-METOP_LETTER = {'Metop-A': 'a',
-                'Metop-B': 'b',
-                'Metop-C': 'c'}
+METOP_LETTER = {"Metop-A": "a", "Metop-B": "b", "Metop-C": "c"}
 
 
 def get_arguments():
-    """
-    Get command line arguments
-    Return
-    name of the service and the config filepath
-    """
-    import argparse
+    """Return parsed command line arguments."""
 
     def validate_config_file_name(config_file_name):
         config_file_name = str(config_file_name)
@@ -108,13 +105,8 @@ def get_arguments():
 def start_product_filtering(registry, message, options, **kwargs):
     """From a posttroll/trollstalker message start the pytroll product filtering"""
 
-    LOG.info("")
-    LOG.info("registry dict: " + str(registry))
-    LOG.info("\tMessage:")
-    LOG.info(message)
-
-    # Determine the instrument name:
-    instrument_name = message.data.get('instrument', message.data.get('instruments'))
+    LOG.info("\nregistry dict: %s", registry)
+    LOG.info("\tMessage:\n%s", message)
 
     # Get yaml config:
     instrument_name = message.data.get("instrument", message.data.get("instruments"))
@@ -179,7 +171,7 @@ def start_product_filtering(registry, message, options, **kwargs):
                     os.path.dirname(dest_filepath),
                 )
 
-        if not 'destination' in options and not 'sir_local_dir' in options:
+        if "destination" not in options and "sir_local_dir" not in options:
             LOG.info("Don't do anything with this file...")
 
     else:
@@ -192,13 +184,14 @@ def product_filter_live_runner(options):
     """Listens and triggers processing"""
 
     LOG.info("*** Start the (EUMETCast) Product-filter runner:")
-    LOG.debug("Listens for messages of type: %s", str(options['message_types']))
-    with Subscribe('', options['message_types'], True) as subscr:
-        with Publish('product_filter_runner', 0) as publisher:
+    LOG.debug("Listens for messages of type: %s", str(options["message_types"]))
+    with Subscribe("", options["message_types"], True) as subscr:
+        with Publish("product_filter_runner", 0) as publisher:
             file_reg = {}
             for msg in subscr.recv():
                 file_reg = start_product_filtering(
-                    file_reg, msg, options, publisher=publisher)
+                    file_reg, msg, options, publisher=publisher
+                )
                 # Cleanup in file registry (keep only the last 5):
                 keys = list(file_reg.keys())
                 if len(keys) > 5:
