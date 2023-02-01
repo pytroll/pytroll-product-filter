@@ -4,11 +4,11 @@ import logging
 import sys
 from logging import handlers
 
-from product_filter.definitions import get_config
-from product_filter.product_filter_runner import (
+from .argparse_wrapper import get_arguments
+from .definitions import get_config
+from .product_filter_runner import (
     _DEFAULT_LOG_FORMAT,
     _DEFAULT_TIME_FORMAT,
-    get_arguments,
     product_filter_live_runner,
 )
 
