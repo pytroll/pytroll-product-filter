@@ -10,7 +10,7 @@
         "Programming Language :: Python",
         "Topic :: Scientific/Engineering"
     ]
-    repository = "https://github.com/pytroll/pytroll-product_filter"
+    repository = "https://github.com/pytroll/pytroll-product-filter"
     authors = [
         "Adam Dybroe <adam.dybroe@smhi.se>",
         "Paulo V. C. Medeiros <paulo.medeiros@smhi.se>"
