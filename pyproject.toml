@@ -1,5 +1,5 @@
 [tool.poetry]
-    name = "product_filter"
+    name = "pytroll-product-filter"
     version = "0.0.0" # This is just a placeholder for poetry_dynamic_versioning
     description = "Pytroll runner for the product-filter"
     classifiers = [
@@ -17,7 +17,7 @@
     ]
 
 [tool.poetry.scripts]
-    product_filter = "product_filter.main:main"
+    pytroll_product_filter = "pytroll_product_filter.main:main"
 
 [build-system]
     requires = ["poetry-core >= 1.0.0", "poetry-dynamic-versioning"]

@@ -26,7 +26,7 @@ in the filename.
 
 #### Developer Mode Installation
 
-:point_right: For those who need/wish to make changes to `deode`'s
+:point_right: For those who need/wish to make changes to `pytroll-product-filter`'s
 source code, or use code from a different branch than `master`.
 
     poetry install
@@ -40,7 +40,7 @@ If you have problems installing `poetry`, you can install in development mode us
 
 ##### Regular Installation From Downloaded Source
 
-:point_right: For those who have `deode`'s source code in a local directory,
+:point_right: For those who have `pytroll-product-filter`'s source code in a local directory,
 wish to install it from there, but also don't want to modify any code.
 
     pip install .
