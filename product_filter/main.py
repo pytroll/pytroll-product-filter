@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Program's entry point."""
 import logging
+import logging.config
 import sys
 from logging import handlers
 
