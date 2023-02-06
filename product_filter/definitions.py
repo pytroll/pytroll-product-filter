@@ -185,11 +185,9 @@ class GranuleFilter(object):
 
 
 def get_config(configfile, service):
-    """Get the configuration from file"""
+    """Get the configuration from file."""
 
-    with open(configfile, "r") as fp_:
-        config = yaml.load(fp_, Loader=yaml.Loader)
-
+    config = get_dict_config_from_yaml_file(configfile)
     options = {}
     for item in config:
         if not isinstance(config[item], dict):
@@ -200,6 +198,13 @@ def get_config(configfile, service):
                     options[key] = config[service][key]
 
     return options
+
+
+def get_dict_config_from_yaml_file(yaml_file_path):
+    """Return a dict from the configs read from the passed yaml file."""
+
+    with open(yaml_file_path, "r") as fp_:
+        return yaml.load(fp_, Loader=yaml.Loader)
 
 
 def granule_inside_area(

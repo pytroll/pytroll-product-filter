@@ -7,7 +7,7 @@ from logging import handlers
 
 from .argparse_wrapper import get_arguments
 from .constants import _DEFAULT_LOG_FORMAT, _DEFAULT_TIME_FORMAT
-from .definitions import get_config
+from .definitions import get_config, get_dict_config_from_yaml_file
 from .product_filter_runner import product_filter_live_runner
 
 
@@ -16,7 +16,7 @@ def main(argv=None):
     args = get_arguments(argv)
 
     if args.logging_conf_file:
-        logging.config.fileConfig(args.logging_conf_file)
+        logging.config.dictConfig(get_dict_config_from_yaml_file(args.logging_conf_file))
     handler = logging.StreamHandler(sys.stderr)
     handler.setLevel(logging.DEBUG)
     formatter = logging.Formatter(fmt=_DEFAULT_LOG_FORMAT, datefmt=_DEFAULT_TIME_FORMAT)
