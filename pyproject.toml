@@ -1,0 +1,52 @@
+[tool.poetry]
+    name = "pytroll-product-filter"
+    version = "0.0.0" # This is just a placeholder for poetry_dynamic_versioning
+    description = "Pytroll runner for the product-filter"
+    classifiers = [
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Topic :: Scientific/Engineering"
+    ]
+    repository = "https://github.com/pytroll/pytroll-product-filter"
+    authors = [
+        "Adam Dybroe <adam.dybroe@smhi.se>",
+        "Paulo V. C. Medeiros <paulo.medeiros@smhi.se>"
+    ]
+
+[tool.poetry.scripts]
+    pytroll_product_filter = "pytroll_product_filter.main:main"
+
+[build-system]
+    requires = ["poetry-core >= 1.0.0", "poetry-dynamic-versioning"]
+    build-backend = "poetry_dynamic_versioning.backend"
+
+[tool.poetry-dynamic-versioning]
+    enable = true
+    style = "pep440"
+
+[tool.poetry.dependencies]
+    python = "^3.9"
+    cartopy = "^0.21.1" # Needed by pytroll-schedule but not specified there
+    matplotlib = "^3.6.3" # Needed by pytroll-schedule but not specified there
+    posttroll = "^1.9.0"
+    pyorbital = "^1.7.3"
+    pyresample = "^1.26.0"
+    pytroll-schedule = "^0.6.0"
+    pyyaml = "^6.0"
+    trollsift = "^0.5.0"
+
+[tool.poetry.dev-dependencies]
+    black = "^23.1.0"
+    isort = "^5.12.0"
+    pip = "^23.0"
+    poetry-dynamic-versioning = "^0.21.3"
+
+[tool.black]
+    line-length = 90
+
+[tool.isort]
+    profile = "black"
+    line_length = 90
