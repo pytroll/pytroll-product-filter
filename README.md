@@ -27,7 +27,7 @@ in the filename.
 #### Developer Mode Installation
 
 :point_right: For those who need/wish to make changes to `pytroll-product-filter`'s
-source code, or use code from a different branch than `master`.
+source code, or use code from a different branch than `main`.
 
     poetry install
 
@@ -44,4 +44,3 @@ If you have problems installing `poetry`, you can install in development mode us
 wish to install it from there, but also don't want to modify any code.
 
     pip install .
-
