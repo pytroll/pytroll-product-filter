@@ -146,7 +146,7 @@ class ProductFilterRunner(Thread):
         else:
             LOG.info("File is there (%s) already, don't copy...", os.path.dirname(dest_filepath))
 
-        output_messages = self.get_output_messages(dest_filepath, message)
+        output_messages = self.get_output_messages(dest_filepath, message, platform_name)
 
         for output_msg in output_messages:
             if output_msg:
@@ -155,14 +155,15 @@ class ProductFilterRunner(Thread):
 
         return registry
 
-    def get_output_messages(self, filepath, msg):
+    def get_output_messages(self, filepath, msg, platform_name):
         """Generate the adequate output message(s) depending on if an output file was created or not."""
-        return [self._generate_output_message(filepath, msg)]
+        return [self._generate_output_message(filepath, msg, platform_name)]
 
-    def _generate_output_message(self, filepath, input_msg):
+    def _generate_output_message(self, filepath, input_msg, platform_name):
         """Create the output message to publish."""
         output_topic = self.publish_topic
         to_send = prepare_posttroll_message(input_msg)
+        to_send['platform_name'] = platform_name
         to_send['uri'] = str(filepath)
         to_send['uid'] = os.path.basename(filepath)
         to_send['type'] = 'unknown'
