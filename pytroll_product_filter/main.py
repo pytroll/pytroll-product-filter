@@ -8,7 +8,6 @@ from logging import handlers
 from .argparse_wrapper import get_arguments
 from .constants import _DEFAULT_LOG_FORMAT, _DEFAULT_TIME_FORMAT
 from .definitions import get_config, get_dict_config_from_yaml_file
-# from .product_filter_runner import product_filter_live_runner
 from .product_filter_runner import ProductFilterRunner
 
 
@@ -32,7 +31,6 @@ def main(argv=None):
             LOG.debug("Mail notifications to: %s", str(log_handle.toaddrs))
 
     OPTIONS = get_config(args.config_file, args.service)
-    # product_filter_live_runner(OPTIONS)
     LOG.info("Starting up.")
     try:
         prodf = ProductFilterRunner(OPTIONS)
